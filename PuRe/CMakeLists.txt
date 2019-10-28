@@ -32,9 +32,14 @@ else ()
 endif ()
 
 
+file(GLOB MAIN_SRC
+	"*.hpp"
+	"*.cpp"
+)
 
-add_executable (main "main.cpp")
+message(STATUS "Detected source files: ${MAIN_SRC}")
 
+add_executable (main ${MAIN_SRC})
 target_link_libraries(main ${OpenCV_LIBS})
 
 add_custom_command(TARGET main POST_BUILD

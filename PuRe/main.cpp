@@ -5,6 +5,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "pure.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -41,36 +43,7 @@ int main()
 
 			edges_filtered = edges.clone();
 
-			{
-				// Thinning
-
-				// Efficient implementation by a combination of all 4 original thinning masks.
-				// TODO: Handle borders of the image
-				uchar *above, *current, *below, *dest;
-				const int rows = edges_filtered.rows - 1;
-				const int cols = edges_filtered.cols - 1;
-				int r, c;
-				for (r = 1; r < rows; ++r)
-				{
-					above = edges.ptr(r - 1);
-					current = edges.ptr(r);
-					below = edges.ptr(r + 1);
-					dest = edges_filtered.ptr(r);
-					for (c = 1; c < cols; ++c)
-					{
-						if (above[c] && current[c - 1]
-							|| above[c] && current[c + 1]
-							|| below[c] && current[c - 1]
-							|| below[c] && current[c + 1])
-						{
-							dest[c] = 0;
-						}
-					}
-				}
-			}
-			
-
-
+			pure::thin_edges(edges, edges_filtered);
 
 			for (int r = 0; r < gray.rows; ++r)
 			{
