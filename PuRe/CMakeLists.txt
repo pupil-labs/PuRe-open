@@ -3,6 +3,8 @@
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+set(OPENCV_LOCATION "D:\\pfa\\libraries\\opencv")
+
 if (MSVC)
 
 	message(STATUS "Detected MSVC compiler")
@@ -14,7 +16,7 @@ if (MSVC)
 
 	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
-	set(OpenCV_DIR "D:\\pfa\\libraries\\opencv\\build\\x64\\vc15\\lib")
+	set(OpenCV_DIR "${OPENCV_LOCATION}\\build\\x64\\vc15\\lib")
 	find_package(OpenCV REQUIRED)
 	message(STATUS "OpenCV library status:")
 	message(STATUS "    config: ${OpenCV_DIR}")
@@ -36,9 +38,9 @@ add_executable (main "main.cpp")
 target_link_libraries(main ${OpenCV_LIBS})
 
 add_custom_command(TARGET main POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "D:\\pfa\\libraries\\opencv\\build\\x64\\vc15\\bin\\opencv_world411.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "D:\\pfa\\libraries\\opencv\\build\\x64\\vc15\\bin\\opencv_world411.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "D:\\pfa\\libraries\\opencv\\build\\x64\\vc15\\bin\\opencv_world411d.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "D:\\pfa\\libraries\\opencv\\build\\x64\\vc15\\bin\\opencv_world411d.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "D:\\pfa\\libraries\\opencv\\build\\bin\\opencv_videoio_ffmpeg411_64.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\bin\\opencv_videoio_ffmpeg411_64.dll" $<TARGET_FILE_DIR:main>
 )
