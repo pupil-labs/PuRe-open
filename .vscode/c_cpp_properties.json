@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "D:\\pfa\\libraries\\opencv\\build\\include"
             ],
             "defines": [
                 "_DEBUG",
@@ -18,9 +19,6 @@
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "compilerArgs": [],
             "browse": {
-                "path": [
-                    "${workspaceFolder}/**"
-                ],
                 "limitSymbolsToIncludedHeaders": true
             },
             "configurationProvider": "vector-of-bool.cmake-tools"
