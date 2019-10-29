@@ -25,7 +25,8 @@ int main()
 		Mat color;
 		Mat gray;
 		Mat edges;
-		Mat edges_filtered;
+		Mat thinned;
+		Mat straightened;
 		bool running = true;
 		while (running)
 		{
@@ -36,31 +37,39 @@ int main()
 				break;
 			}
 			cvtColor(color, gray, COLOR_BGR2GRAY);
+
+			// TODO: resizing to working size (?)
+			normalize(gray, gray, 0, 255, NORM_MINMAX);
+
+			// convert back to color for visualization
 			cvtColor(gray, color, COLOR_GRAY2BGR);
 
+			// TODO: what to choose as parameters?
 			Canny(gray, edges, 160, 160*2);
 			threshold(edges, edges, 127, 255, THRESH_BINARY);
 
-			edges_filtered = edges.clone();
+			thinned = edges.clone();
 
-			pure::thin_edges(edges, edges_filtered);
+			pure::thin_edges(edges, thinned);
 
-			for (int r = 0; r < gray.rows; ++r)
-			{
-				for (int c = 0; c < gray.cols; ++c)
-				{
-					if (edges.at<uchar>(r, c) > 127)
-					{
-						color.at<Vec3b>(r, c)[0] /= 2;
-						color.at<Vec3b>(r, c)[1] /= 2;
-						color.at<Vec3b>(r, c)[2] = 255;
-					}
-				}
-			}
+			straightened = thinned.clone();
+			pure::straighten_edges(thinned, straightened);
+    		// NOTE: The straightening result in segments that would have been removed
+    		// by previous edge-thinning! Maybe we should thin again?
+			// Example:
+			//   X
+			//  X X
+			// X
+			//  X
+			// will become:
+			//  XXX
+			//  X
+			//  X
+			// which would hit the thinning filter with the top-left corner!
 
-			imshow("Video", color);
 			imshow("Canny", edges);
-			imshow("Filtered", edges_filtered);
+			imshow("Thinned", thinned);
+			imshow("Straightened", straightened);
 
 			if (waitKey(1) >= 0)
 			{

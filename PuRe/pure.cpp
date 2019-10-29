@@ -44,3 +44,104 @@ void pure::thin_edges(const Mat& edge_img, Mat& out_img) {
         }
     }
 }
+
+void pure::straighten_edges(const Mat& edge_img, Mat& out_img) {
+    // Straightening
+    // As described in in the ElSe paper (Fuhl et al. 2016)
+
+    // NOTE: The order of operation does make a difference here as some of those filters
+    // overlap. Since there was no specific information about the order of application,
+    // I implemented then basically in the order of presentation in the paper.
+
+    // TODO: This could be optimized even more with something like karnaugh maps.
+    // TODO: Handle border of the image.
+    const uchar *in0, *in1, *in2, *in3;
+    uchar *out0, *out1, *out2, *out3;
+    const int rows = edge_img.rows - 3;
+    const int cols = edge_img.cols - 3;
+    int r, c;
+    for (r = 0; r < rows; ++r)
+    {
+        in0 = edge_img.ptr(r);
+        in1 = edge_img.ptr(r + 1);
+        in2 = edge_img.ptr(r + 2);
+        in3 = edge_img.ptr(r + 3);
+        out0 = out_img.ptr(r);
+        out1 = out_img.ptr(r + 1);
+        out2 = out_img.ptr(r + 2);
+        out3 = out_img.ptr(r + 3);
+        for (c = 0; c < cols; ++c)
+        {
+            if (in1[c] && in0[c + 1] && in1[c + 2])
+            {
+                //  X
+                // XXX
+                out0[c + 1] = 0;
+                out1[c + 1] = 255;
+            }
+            if (in1[c] && in0[c + 1] && in0[c + 2] && in1[c + 3])
+            {
+                //  XX
+                // XXXX
+                out0[c + 1] = 0;
+                out0[c + 2] = 0;
+                out1[c + 1] = 255;
+                out1[c + 2] = 255;
+            }
+            if (in0[c + 1] && in1[c] && in2[c + 1])
+            {
+                //  X
+                // XX
+                //  X
+                out1[c] = 0;
+                out1[c + 1] = 255;
+            }
+            if (in0[c + 1] && in1[c] && in2[c] && in3[c + 1])
+            {
+                //  X
+                // XX
+                // XX
+                //  X
+                out1[c] = 0;
+                out2[c] = 0;
+                out1[c + 1] = 255;
+                out2[c + 1] = 255;
+            }
+            if (in0[c] && in1[c + 1] && in2[c])
+            {
+                // X
+                // XX
+                // X
+                out1[c + 1] = 0;
+                out1[c] = 255;
+            }
+            if (in0[c] && in1[c + 1] && in2[c + 1] && in3[c])
+            {
+                // X
+                // XX
+                // XX
+                // X
+                out1[c + 1] = 0;
+                out2[c + 1] = 0;
+                out1[c] = 255;
+                out2[c] = 255;
+            }
+            if (in0[c] && in1[c + 1] && in0[c + 2])
+            {
+                // XXX
+                //  X
+                out1[c + 1] = 0;
+                out0[c + 1] = 255;
+            }
+            if (in0[c] && in1[c + 1] && in1[c + 2] && in0[c + 3])
+            {
+                // XXXX
+                //  XX
+                out1[c + 1] = 0;
+                out1[c + 2] = 0;
+                out0[c + 1] = 255;
+                out0[c + 2] = 255;
+            }
+        }
+    }
+}
