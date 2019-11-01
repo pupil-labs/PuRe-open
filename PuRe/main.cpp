@@ -1,5 +1,5 @@
 #include <iostream>
-#include <array>
+#include <vector>
 
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
@@ -29,6 +29,7 @@ int main()
 		Mat straightened;
 		Mat broken;
 		bool running = true;
+		vector<vector<Point>> contours;
 		while (running)
 		{
 			cap.read(color);
@@ -74,6 +75,11 @@ int main()
 			broken = straightened.clone();
 			pure::break_orthogonals(straightened, broken);
 
+			findContours(broken, contours, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
+
+			drawContours(color, contours, -1, Scalar(0, 0, 255));
+
+			imshow("Color", color);
 			imshow("Canny", edges);
 			imshow("Thinned", thinned);
 			imshow("Straightened", straightened);
