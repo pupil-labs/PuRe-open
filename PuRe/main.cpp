@@ -61,7 +61,10 @@ int main()
 
 			thinned = edges.clone();
 
-			pure::thin_edges(edges, thinned);
+			// NOTE: Thinning won't work as expected, if input and output image are
+			// different. The algorithm apparently assumes that the filter is applied to
+			// the input image sequentially.
+			pure::thin_edges(thinned, thinned);
 			// TODO: Avoid copying all the time and except use masks and visualization
 			pure::break_crossings(thinned, thinned);
 
