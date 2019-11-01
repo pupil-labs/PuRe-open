@@ -3,9 +3,16 @@
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(OPENCV_LOCATION "D:\\pfa\\libraries\\opencv")
 
-if (MSVC)
+set(OPENCV_INSTALL_LOCATION "NOT SET" CACHE PATH "Path to installed OpenCV folder.")
+
+message(STATUS "Checking config...")
+message(STATUS "  - OPENCV_INSTALL_LOCATION: ${OPENCV_INSTALL_LOCATION}")
+if(OPENCV_INSTALL_LOCATION STREQUAL "NOT SET")
+	message(FATAL_ERROR "Need to set OPENCV_INSTALL_LOCATION!")
+endif()
+
+if(MSVC)
 
 	message(STATUS "Detected MSVC compiler")
 
@@ -16,7 +23,7 @@ if (MSVC)
 
 	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
-	set(OpenCV_DIR "${OPENCV_LOCATION}\\build\\x64\\vc15\\lib")
+	set(OpenCV_DIR "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\lib")
 	find_package(OpenCV REQUIRED)
 	message(STATUS "OpenCV library status:")
 	message(STATUS "    config: ${OpenCV_DIR}")
@@ -25,11 +32,11 @@ if (MSVC)
 	message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 
-else ()
+else()
 
 	message(SEND_ERROR "Compiler other than MSVC detected. Not yet supported!")
 
-endif ()
+endif()
 
 
 file(GLOB MAIN_SRC
@@ -43,9 +50,9 @@ add_executable (main ${MAIN_SRC})
 target_link_libraries(main ${OpenCV_LIBS})
 
 add_custom_command(TARGET main POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_LOCATION}\\build\\bin\\opencv_videoio_ffmpeg411_64.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world411d.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_videoio_ffmpeg411_64.dll" $<TARGET_FILE_DIR:main>
 )
