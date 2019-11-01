@@ -120,6 +120,13 @@ int main()
 					continue;
 				}
 
+				// 3.3.3 Filter segments based on curvature approximation
+				auto rect = minAreaRect(segment);
+				double ratio = rect.size.width / rect.size.height;
+				if (ratio < 0.2 || ratio > 5.0) continue;
+				
+
+
 				polylines(color, segment, false, Scalar(0, 0, 255));
 			}
 
