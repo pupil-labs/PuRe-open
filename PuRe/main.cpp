@@ -21,6 +21,9 @@ int main()
 		exit(-1);
 	}
 
+	const int W = 320;
+	const int H = 240;
+
 	{
 		Mat color;
 		Mat gray;
@@ -38,6 +41,9 @@ int main()
 				cerr << "Empty frame!" << endl;
 				break;
 			}
+			// TODO: Consider aspect ratio!
+			resize(color, color, Size(W, H));
+
 			cvtColor(color, gray, COLOR_BGR2GRAY);
 
 			// TODO: resizing to working size (?)
