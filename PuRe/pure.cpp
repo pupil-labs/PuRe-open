@@ -20,6 +20,9 @@ void pure::thin_edges(const Mat& edge_img, Mat& out_img) {
     // |E|X|_| |_|X|E| |E|X|_| |_|X|E|
     // |_|_|_| |_|_|_| |_|E|_| |_|E|_|
 
+    // TODO: See other (more elaborate) thinning algorithms in opencv:
+    // https://github.com/opencv/opencv_contrib/blob/master/modules/ximgproc/src/thinning.cpp
+
     // TODO: Handle borders of the image.
     const uchar *above, *current, *below;
     const int rows = edge_img.rows - 2;
