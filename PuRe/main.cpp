@@ -27,6 +27,7 @@ int main()
 		Mat edges;
 		Mat thinned;
 		Mat straightened;
+		Mat broken;
 		bool running = true;
 		while (running)
 		{
@@ -66,10 +67,15 @@ int main()
 			//  X
 			//  X
 			// which would hit the thinning filter with the top-left corner!
+			// TODO: Investigate the effect of this.
+
+			broken = straightened.clone();
+			pure::break_orthogonals(straightened, broken);
 
 			imshow("Canny", edges);
 			imshow("Thinned", thinned);
 			imshow("Straightened", straightened);
+			imshow("Broken", broken);
 
 			if (waitKey(1) >= 0)
 			{

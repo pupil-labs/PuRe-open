@@ -10,4 +10,6 @@ namespace pure {
 
     void straighten_edges(const Mat& edge_img, Mat& out_img);
 
+    void break_orthogonals(const Mat& edge_img, Mat& out_img);
+
 }
