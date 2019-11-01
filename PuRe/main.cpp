@@ -52,6 +52,8 @@ int main()
 			thinned = edges.clone();
 
 			pure::thin_edges(edges, thinned);
+			// TODO: Avoid copying all the time and except use masks and visualization
+			pure::break_crossings(thinned, thinned);
 
 			straightened = thinned.clone();
 			pure::straighten_edges(thinned, straightened);

@@ -45,6 +45,41 @@ void pure::thin_edges(const Mat& edge_img, Mat& out_img) {
     }
 }
 
+
+
+void pure::break_crossings(const Mat& edge_img, Mat& out_img) {
+    // Break connections of more than 2 lines
+    // As described in in the ElSe paper (Fuhl et al. 2016)
+
+    const uchar *above, *current, *below;
+    const int rows = edge_img.rows - 2;
+    const int cols = edge_img.cols - 2;
+    uchar *dest;
+    int r, c;
+    for (r = 0; r < rows; ++r)
+    {
+        above = edge_img.ptr(r);
+        current = edge_img.ptr(r + 1);
+        below = edge_img.ptr(r + 2);
+        dest = out_img.ptr(r + 1);
+        for (c = 0; c < cols; ++c)
+        {
+            if(
+                (bool)above[c]
+                + (bool)above[c + 1]
+                + (bool)above[c + 2]
+                + (bool)current[c]
+                + (bool)current[c + 2]
+                + (bool)below[c]
+                + (bool)below[c + 1]
+                + (bool)below[c + 2]
+                > 2
+            ) dest[c + 1] = 0;
+        }
+    }
+}
+
+
 void pure::straighten_edges(const Mat& edge_img, Mat& out_img) {
     // Straightening
     // As described in in the ElSe paper (Fuhl et al. 2016)
