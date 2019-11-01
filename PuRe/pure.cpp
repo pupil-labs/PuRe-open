@@ -22,24 +22,24 @@ void pure::thin_edges(const Mat& edge_img, Mat& out_img) {
 
     // TODO: Handle borders of the image.
     const uchar *above, *current, *below;
-    const int rows = edge_img.rows - 1;
-    const int cols = edge_img.cols - 1;
+    const int rows = edge_img.rows - 2;
+    const int cols = edge_img.cols - 2;
     uchar *dest;
     int r, c;
-    for (r = 1; r < rows; ++r)
+    for (r = 0; r < rows; ++r)
     {
-        above = edge_img.ptr(r - 1);
-        current = edge_img.ptr(r);
-        below = edge_img.ptr(r + 1);
-        dest = out_img.ptr(r);
-        for (c = 1; c < cols; ++c)
+        above = edge_img.ptr(r);
+        current = edge_img.ptr(r + 1);
+        below = edge_img.ptr(r + 2);
+        dest = out_img.ptr(r + 1);
+        for (c = 0; c < cols; ++c)
         {
-            if (above[c] && current[c - 1] ||
-                above[c] && current[c + 1] ||
-                below[c] && current[c - 1] ||
-                below[c] && current[c + 1])
+            if (above[c + 1] && current[c] ||
+                above[c + 1] && current[c + 2] ||
+                below[c + 1] && current[c] ||
+                below[c + 1] && current[c + 2])
             {
-                dest[c] = 0;
+                dest[c + 1] = 0;
             }
         }
     }
