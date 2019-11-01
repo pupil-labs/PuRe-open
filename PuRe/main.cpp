@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -23,6 +24,8 @@ int main()
 
 	const int W = 320;
 	const int H = 240;
+	const double MIN_PUPIL_DIAMETER = 0.0467 * sqrt(W*W + H*H);
+	const double MAX_PUPIL_DIAMETER = 0.1933 * sqrt(W*W + H*H);
 
 	{
 		Mat color;
@@ -83,7 +86,43 @@ int main()
 
 			findContours(broken, contours, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
 
-			drawContours(color, contours, -1, Scalar(0, 0, 255));
+
+			double approx_diameter = 0;
+			for (auto& segment : contours)
+			{
+				// 3.3.1 Filter segments with < 5 points
+				if (segment.size() < 5)
+				{
+					continue;
+				}
+				
+				// 3.3.2 Filter segments based on approximate diameter
+				const auto end = segment.end();
+				for (auto p1 = segment.begin(); p1 != end; ++p1)
+				{
+					for (auto p2 = p1 + 1; p2 != end; ++p2)
+					{
+						approx_diameter = max(approx_diameter, norm(*p1 - *p2));
+						// we can early exit, because we will only get bigger
+						if (approx_diameter > MAX_PUPIL_DIAMETER) break;
+					}
+					// we can early exit, because we will only get bigger
+					if (approx_diameter > MAX_PUPIL_DIAMETER) break;
+				}
+				if (approx_diameter > MAX_PUPIL_DIAMETER)
+				{
+					// diameter too large
+					continue;
+				}
+				if (approx_diameter < MIN_PUPIL_DIAMETER)
+				{
+					// diameter too small
+					continue;
+				}
+
+				polylines(color, segment, false, Scalar(0, 0, 255));
+			}
+
 
 			imshow("Color", color);
 			imshow("Canny", edges);
