@@ -24,8 +24,8 @@ int main()
 
 	const int W = 320;
 	const int H = 240;
-	const double MIN_PUPIL_DIAMETER = 0.0467 * sqrt(W*W + H*H);
-	const double MAX_PUPIL_DIAMETER = 0.1933 * sqrt(W*W + H*H);
+	const double MIN_PUPIL_DIAMETER = 0.0467 * sqrt(W * W + H * H);
+	const double MAX_PUPIL_DIAMETER = 0.1933 * sqrt(W * W + H * H);
 
 	{
 		Mat color;
@@ -56,7 +56,8 @@ int main()
 			cvtColor(gray, color, COLOR_GRAY2BGR);
 
 			// TODO: what to choose as parameters?
-			Canny(gray, edges, 160, 160*2);
+			Canny(gray, edges, 160, 160 * 2);
+			// TODO: is canny already thresholded?
 			threshold(edges, edges, 127, 255, THRESH_BINARY);
 
 			thinned = edges.clone();
@@ -70,8 +71,8 @@ int main()
 
 			straightened = thinned.clone();
 			pure::straighten_edges(thinned, straightened);
-    		// NOTE: The straightening result in segments that would have been removed
-    		// by previous edge-thinning! Maybe we should thin again?
+			// NOTE: The straightening result in segments that would have been removed
+			// by previous edge-thinning! Maybe we should thin again?
 			// Example:
 			//   X
 			//  X X
@@ -89,16 +90,15 @@ int main()
 
 			findContours(broken, contours, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
 
-
 			double approx_diameter = 0;
-			for (auto& segment : contours)
+			for (auto &segment : contours)
 			{
 				// 3.3.1 Filter segments with < 5 points
 				if (segment.size() < 5)
 				{
 					continue;
 				}
-				
+
 				// 3.3.2 Filter segments based on approximate diameter
 				const auto end = segment.end();
 				for (auto p1 = segment.begin(); p1 != end; ++p1)
@@ -107,10 +107,16 @@ int main()
 					{
 						approx_diameter = max(approx_diameter, norm(*p1 - *p2));
 						// we can early exit, because we will only get bigger
-						if (approx_diameter > MAX_PUPIL_DIAMETER) break;
+						if (approx_diameter > MAX_PUPIL_DIAMETER)
+						{
+							break;
+						}
 					}
 					// we can early exit, because we will only get bigger
-					if (approx_diameter > MAX_PUPIL_DIAMETER) break;
+					if (approx_diameter > MAX_PUPIL_DIAMETER)
+					{
+						break;
+					}
 				}
 				if (approx_diameter > MAX_PUPIL_DIAMETER)
 				{
