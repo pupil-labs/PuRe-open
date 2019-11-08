@@ -163,20 +163,17 @@ int main()
 					}
 				}
 				
-
+				// NOTE: width always provides the first axis, which corresponds to the
+				// angle. Height provides the second axis, which corresponds to angle +
+				// 90deg. This is NOT related to major/minor axes! But we also don't
+				// need the information of which is the major and which is the minor
+				// axis.
+				auto first_ax = ellipse.size.width / 2;
+				auto second_ax = ellipse.size.height / 2;
 
 
 				// 3.3.5 Additional filter
 				{	
-
-					// NOTE: width always provides the first axis, which corresponds to
-					// the angle. Height provides the second axis, which corresponds to
-					// angle + 90deg. This is NOT related to major/minor axes! But we
-					// also don't need the information of which is the major and which
-					// is the minor axis.
-					auto first_ax = ellipse.size.width / 2;
-					auto second_ax = ellipse.size.height / 2;
-
 					Point2f segment_mean(0, 0);
 					for (const auto& p : segment)
 					{
@@ -195,7 +192,7 @@ int main()
 
 					// See the following rhombus for reference. Note that we only need
 					// to test for Q1, since the we can center at (0,0) and the rest is
-					// symmetry.
+					// symmetry. (not in image coordinates, but y-up)
 					//   /|\
 					//  / | \ Q1
 					// /  |  \
@@ -224,16 +221,99 @@ int main()
 					if (unrotated.x / first_ax + unrotated.y / second_ax > 1) continue;
 
 				}
-				
+
+
+				const auto major = (first_ax > second_ax) ? first_ax : second_ax;
+				const auto minor = (first_ax < second_ax) ? first_ax : second_ax;
+			
+				{
+					// Confidence measures
+
+					const double ellipse_aspect_ratio = minor / major;
+
+					double angular_edge_spread = 0.0;
+					{
+						// Q2 | Q1
+						// -------
+						// Q3 | Q4
+						// (not in image coordinates, but y-up)
+						bool points_in_q1 = false;
+						bool points_in_q2 = false;
+						bool points_in_q3 = false;
+						bool points_in_q4 = false;
+
+						for (const auto& p : segment)
+						{
+							if (p.x > ellipse.center.x)
+							{
+								if (p.y > ellipse.center.y) points_in_q1 = true;
+								else points_in_q4 = true;
+							}
+							else
+							{
+								if (p.y > ellipse.center.y) points_in_q2 = true;
+								else points_in_q3 = true;
+							}
+							// early exit
+							if (points_in_q1 && points_in_q2 && points_in_q3 && points_in_q4) break;
+						}
+						
+						if (points_in_q1) angular_edge_spread += 0.25;
+						if (points_in_q2) angular_edge_spread += 0.25;
+						if (points_in_q3) angular_edge_spread += 0.25;
+						if (points_in_q4) angular_edge_spread += 0.25;
+					}
+
+					double ellipse_outline_contrast = 0;
+					{
+						// Iterate circle with stride of 10 degrees (all in radians)
+						constexpr double stride = 10 * M_PI / 180.0;
+						double angle = 0;
+						// NOTE: A for-loop: for(angle=0; angle < 2*PI; ...) will result
+						// in 37 iterations because of rounding errors. This will result
+						// in one line being counted twice.
+						constexpr int n_iterations = 36;
+						constexpr int NEIGHBORHOOD_4 = 4;
+						for (int i = 0; i < n_iterations; ++i)
+						{
+							Point2f offset(
+								static_cast<float>(minor * cos(angle)),
+								static_cast<float>(minor * sin(angle))
+							);
+							Point2f outline_point = ellipse.center + offset;
+
+							LineIterator inner_line(gray, ellipse.center, outline_point, NEIGHBORHOOD_4);
+
+							double inner_avg = 0;
+							for (int i = 0; i < inner_line.count; i++, ++inner_line)
+							{
+								inner_avg += *(*inner_line);
+							}
+							inner_avg /= inner_line.count;
+
+
+							LineIterator outer_line(gray, outline_point, outline_point + offset, NEIGHBORHOOD_4);
+							double outer_avg = 0;
+							for (int i = 0; i < outer_line.count; i++, ++outer_line)
+							{
+								outer_avg += *(*outer_line);
+							}
+							outer_avg /= outer_line.count;
+							// TODO: How is this actually supposed to be calculated!?
+							if (inner_avg < outer_avg) ellipse_outline_contrast += 1;
+
+							angle += stride;
+						}
+						ellipse_outline_contrast /= n_iterations;
+					}
+				}
+
 				polylines(color, segment, false, Scalar(0, 0, 255));
 			}
 
 
+
 			imshow("Color", color);
-			imshow("Canny", edges);
-			imshow("Thinned", thinned);
-			imshow("Straightened", straightened);
-			imshow("Broken", broken);
 
 			if (waitKey(1) >= 0)
 			{
