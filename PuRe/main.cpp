@@ -27,6 +27,10 @@ int main()
 	const double MIN_PUPIL_DIAMETER = 0.0467 * sqrt(W * W + H * H);
 	const double MAX_PUPIL_DIAMETER = 0.1933 * sqrt(W * W + H * H);
 
+	// Cutoff threshold for ellipse axes ratio, see PuRe 3.3.3
+	const double R_th = 0.2;
+	const double R_th_inv = 1.0 / R_th;
+
 	{
 		Mat color;
 		Mat gray;
@@ -130,9 +134,34 @@ int main()
 				}
 
 				// 3.3.3 Filter segments based on curvature approximation
-				auto rect = minAreaRect(segment);
-				double ratio = rect.size.width / rect.size.height;
-				if (ratio < 0.2 || ratio > 5.0) continue;
+				{
+					auto rect = minAreaRect(segment);
+					double ratio = rect.size.width / rect.size.height;
+					if (ratio < R_th || ratio > R_th_inv)
+					{
+						continue;
+					}
+				}
+
+				// 3.3.4 Ellipse fitting
+				// NOTE: This is a cv::RotatedRect, see
+				// https://stackoverflow.com/a/32798273 for conversion to ellipse
+				// parameters
+				auto ellipse = fitEllipse(segment);
+				{
+					// 	(I) discard if center outside image boundaries
+					if (ellipse.center.x < 0 || ellipse.center.y < 0 || ellipse.center.x > W || ellipse.center.y > H)
+					{
+						continue;
+					}
+
+					// 	(II) discard if ellipse is too skewed
+					auto ratio = ellipse.size.width / ellipse.size.height;
+					if (ratio < R_th || ratio > R_th_inv)
+					{
+						continue;
+					}
+				}
 				
 
 
