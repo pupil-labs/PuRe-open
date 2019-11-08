@@ -165,6 +165,58 @@ int main()
 				
 
 
+
+				// 3.3.5 Additional filter
+				{	
+
+					// NOTE: width always provides the first axis, which corresponds to
+					// the angle. Height provides the second axis, which corresponds to
+					// angle + 90deg. This is NOT related to major/minor axes! But we
+					// also don't need the information of which is the major and which
+					// is the minor axis.
+					auto first_ax = ellipse.size.width / 2;
+					auto second_ax = ellipse.size.height / 2;
+
+					Point2f segment_mean(0, 0);
+					for (const auto& p : segment)
+					{
+						segment_mean += Point2f(p);
+					}
+					// NOTE: cv::Point operator /= does not work with size_t scalar
+					segment_mean.x /= segment.size();
+					segment_mean.y /= segment.size();
+
+					// "unrotate" segment mean for easier bounds checks. Also take
+					// absolute values so we need to check only in one quadrant of the
+					// rhombus.
+					// See the following rhombus for reference.
+					//   /|\
+					//  / | \ Q1
+					// /  |  \
+					//---------
+					// \  |  /
+					//  \ | /
+					//   \|/
+
+					// Shift rotation to origin, no need to shift back later, since our
+					// rhombus definition is location-invariant.
+					segment_mean -= ellipse.center; 
+					const auto angle_rad = ellipse.angle * M_PI / 180.0f;
+					const float angle_cos = static_cast<float>(cos(angle_rad));
+					const float angle_sin = static_cast<float>(sin(angle_rad));
+					Point2f unrotated(
+						abs(segment_mean.x * angle_cos - segment_mean.y * angle_sin),
+						abs(segment_mean.x * angle_sin + segment_mean.y * angle_cos)
+					);
+					
+					// Discard based on testing first rhombus quadrant Q1. This tests
+					// for containment in axis-aligned triangle.
+					if (unrotated.x > first_ax) continue;
+					if (unrotated.y > second_ax) continue;
+					if (unrotated.x / first_ax + unrotated.y / second_ax > 1) continue;
+
+				}
+				
 				polylines(color, segment, false, Scalar(0, 0, 255));
 			}
 

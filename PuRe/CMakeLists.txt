@@ -20,6 +20,7 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4") # MSVC warning levels: W3 < W4 < Wall
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2") # O2 is best speed optimization
 	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Od") # Od disables all optimization for debugging
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_MATH_DEFINES") # for M_PI in <cmath
 
 	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
