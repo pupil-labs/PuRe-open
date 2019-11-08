@@ -212,6 +212,22 @@ void pure::break_orthogonals(const Mat& edge_img, Mat& out_img) {
             // Following are all patterns that can turn this pixel off. This allows for
             // using pattern overlapping, e.g. between f2 and g2 (see below). Also it
             // results in every pixel being written only once.
+            
+            // See here which pixels are affected by which pattern:
+            // +----+----+----+----+
+            // |    |d1d3|f1  |g1  |
+            // |    |    |    |    |
+            // +----+----+----+----+
+            // |    |e3  |    |e1  |
+            // |    |    |    |    |
+            // +----+----+----+----+
+            // |f2g2|d2d4|f3f4|    |
+            // |    |    |g4  |    |
+            // +----+----+----+----+
+            // |    |e2  |g3  |e4  |
+            // |    |    |    |    |
+            // +----+----+----+----+
+            
             if (in0[c + 1] && (
                 in0[c] && in1[c + 2] && in2[c +2] || // d1
                 in0[c + 2] && in1[c] && in2[c] // d3
