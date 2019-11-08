@@ -186,10 +186,16 @@ int main()
 					segment_mean.x /= segment.size();
 					segment_mean.y /= segment.size();
 
-					// "unrotate" segment mean for easier bounds checks. Also take
-					// absolute values so we need to check only in one quadrant of the
-					// rhombus.
-					// See the following rhombus for reference.
+					// We need to test if the mean lies in the rhombus defined by the
+					// rotated rect of the ellipse. Essentially each vertex of the
+					// rhombus corresponds to a midpoint of the sides of the rect.
+					// Testing is easiest if we don't rotate all points of the rect, but
+					// rotate the segment_mean backwards, because then we can test
+					// against the axis-aligned rhombus.
+
+					// See the following rhombus for reference. Note that we only need
+					// to test for Q1, since the we can center at (0,0) and the rest is
+					// symmetry.
 					//   /|\
 					//  / | \ Q1
 					// /  |  \
@@ -198,19 +204,21 @@ int main()
 					//  \ | /
 					//   \|/
 
-					// Shift rotation to origin, no need to shift back later, since our
-					// rhombus definition is location-invariant.
+					// Shift rotation to origin to center at (0,0).
 					segment_mean -= ellipse.center; 
-					const auto angle_rad = ellipse.angle * M_PI / 180.0f;
+					// Rotate backwards with negative angle
+					const auto angle_rad = - ellipse.angle * M_PI / 180.0f;
 					const float angle_cos = static_cast<float>(cos(angle_rad));
 					const float angle_sin = static_cast<float>(sin(angle_rad));
+					// We take the abs values to utilize symmetries. This way can do the
+					// entire testing in Q1 of the rhombus.
 					Point2f unrotated(
 						abs(segment_mean.x * angle_cos - segment_mean.y * angle_sin),
 						abs(segment_mean.x * angle_sin + segment_mean.y * angle_cos)
 					);
 					
 					// Discard based on testing first rhombus quadrant Q1. This tests
-					// for containment in axis-aligned triangle.
+					// for containment in the axis-aligned triangle.
 					if (unrotated.x > first_ax) continue;
 					if (unrotated.y > second_ax) continue;
 					if (unrotated.x / first_ax + unrotated.y / second_ax > 1) continue;
