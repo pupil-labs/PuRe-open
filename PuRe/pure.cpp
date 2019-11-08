@@ -249,3 +249,16 @@ void pure::break_orthogonals(const Mat& edge_img, Mat& out_img) {
         }
     }
 }
+
+namespace pure {
+
+    Result Detector::detect(const Mat& img, Mat& debug_img)
+    {
+        Result result;
+        
+
+        return result;
+    }
+
+}
+
