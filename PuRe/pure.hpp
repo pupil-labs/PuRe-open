@@ -14,21 +14,29 @@ namespace pure {
 
 
     struct Parameters {
-        double canny_lower_threshold = 160;
-        double canny_upper_threshold = 160*2;
+        double canny_lower_threshold = 20;
+        double canny_upper_threshold = 150;
         double min_pupil_diameter_ratio = 0.07 * 2/3;
         double max_pupil_diameter_ratio = 0.29;
         double axes_ratio_threshold = 0.2;
+    };
+
+    struct Confidence
+    {
+        double value = 0;
+        double aspect_ratio = 0;
+        double angular_spread = 0;
+        double outline_contrast = 0;
     };
 
     struct Result {
         Point2f center = {0, 0};
         Size2f axes = {0, 0};
         double angle = 0;
-        double confidence = 0;
+        Confidence confidence = {0, 0, 0, 0};
         bool operator<(const Result& other) const
         {
-            return confidence < other.confidence;
+            return confidence.value < other.confidence.value;
         }
     };
     
@@ -67,18 +75,24 @@ namespace pure {
         vector<Result> candidates;
         double MIN_PUPIL_DIAMETER, MAX_PUPIL_DIAMETER;
         void select_edge_segments();
-        
-        bool segment_large_enough(const Segment& segment);
-        bool segment_diameter_valid(const Segment& segment);
-        bool segment_curvature_valid(const Segment& segment);
-        bool axes_ratio_is_invalid(double ratio);
-        bool fit_ellipse(const Segment& segment, Result& result);
-        bool segment_mean_in_ellipse(const Segment& segment, const Result& result);
 
-        double calculate_confidence(const Segment& segment, const Result& result);
-        double angular_edge_spread(const Segment& segment, const Result& result);
-        double ellipse_outline_constrast(const Result& result);
+        void evaluate_segment(const Segment& segment, Result& result) const;
+        bool segment_large_enough(const Segment& segment) const;
+        bool segment_diameter_valid(const Segment& segment) const;
+        bool segment_curvature_valid(const Segment& segment) const;
+        bool axes_ratio_is_invalid(double ratio) const;
+        bool fit_ellipse(const Segment& segment, Result& result) const;
+        bool segment_mean_in_ellipse(const Segment& segment, const Result& result) const;
 
+        Confidence calculate_confidence(const Segment& segment, const Result& result) const;
+        double angular_edge_spread(const Segment& segment, const Result& result) const;
+        double ellipse_outline_constrast(const Result& result) const;
+
+    private:
+        // 3.5. Conditional Segment Combination
+        void combine_segments();
+        bool proper_intersection(const Rect& r1, const Rect& r2) const;
+        Segment merge_segments(const Segment& s1, const Segment& s2) const;
 
     };
 

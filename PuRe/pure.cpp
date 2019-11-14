@@ -22,10 +22,23 @@ namespace pure {
 
         preprocess();
         detect_edges();
-        cvtColor(img, *debug_img, COLOR_GRAY2BGR);
-        select_edge_segments();
 
-        return *std::max_element(candidates.begin(), candidates.end());
+        select_edge_segments();
+        combine_segments();
+
+
+        std::sort(candidates.rbegin(), candidates.rend());
+        for(int i = 0; i < 10; i++)
+        {
+            if (candidates.size() < i) break;
+            auto& r = candidates[i];
+            if (r.confidence.value == 0) break;
+            ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360, Scalar(255, 255, 0));
+        }
+
+
+        return Result();
+        // return *std::max_element(candidates.begin(), candidates.end());
     }
 
     void Detector::preprocess()
@@ -39,6 +52,8 @@ namespace pure {
     void Detector::detect_edges()
     {   
         Canny(img, img, params.canny_lower_threshold, params.canny_upper_threshold);
+
+        cvtColor(img, *debug_img, COLOR_GRAY2BGR);
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
         thin_edges();
@@ -58,6 +73,7 @@ namespace pure {
         // which would hit the thinning filter with the top-left corner!
         // TODO: Investigate the effect of this.
         break_orthogonals();
+        imshow("filtered", img);
     }
 
 
@@ -337,55 +353,57 @@ namespace pure {
 
         for (size_t segment_i = 0; segment_i < segments.size(); ++segment_i)
         {
-            auto& segment = segments[segment_i];
-            auto& result = candidates[segment_i];
-
-        	// 3.3.1 Filter small segments
-        	if (!segment_large_enough(segment))
-        	{
-                result.confidence = 0;
-        		continue;
-        	}
-
-        	// 3.3.2 Filter segments based on approximate diameter
-            if (!segment_diameter_valid(segment))
-            {
-                result.confidence = 0;
-                continue;
-            }
-
-        	// 3.3.3 Filter segments based on curvature approximation
-            if (!segment_curvature_valid(segment))
-            {
-                result.confidence = 0;
-                continue;
-            }
-
-        	// 3.3.4 Ellipse fitting
-        	if (!fit_ellipse(segment, result))
-            {
-                result.confidence = 0;
-                continue;
-        	}
-
-        	// 3.3.5 Additional filter
-        	if (!segment_mean_in_ellipse(segment, result))
-            {
-                result.confidence = 0;
-                continue;
-            }
-            
-            // 3.4  Calculate confidence
-            result.confidence = calculate_confidence(segment, result);
+        	evaluate_segment(segments[segment_i], candidates[segment_i]);
         }
     }
 
-    inline bool Detector::segment_large_enough(const Segment& segment)
+    void Detector::evaluate_segment(const Segment& segment, Result& result) const
+    {
+        // 3.3.1 Filter small segments
+        if (!segment_large_enough(segment))
+        {
+            result.confidence.value = 0;
+            return;
+        }
+
+        // 3.3.2 Filter segments based on approximate diameter
+        if (!segment_diameter_valid(segment))
+        {
+            result.confidence.value = 0;
+            return;
+        }
+
+        // 3.3.3 Filter segments based on curvature approximation
+        if (!segment_curvature_valid(segment))
+        {
+            result.confidence.value = 0;
+            return;
+        }
+
+        // 3.3.4 Ellipse fitting
+        if (!fit_ellipse(segment, result))
+        {
+            result.confidence.value = 0;
+            return;
+        }
+
+        // 3.3.5 Additional filter
+        if (!segment_mean_in_ellipse(segment, result))
+        {
+            result.confidence.value = 0;
+            return;
+        }
+        
+        // 3.4  Calculate confidence
+        result.confidence = calculate_confidence(segment, result);
+    }
+
+    inline bool Detector::segment_large_enough(const Segment& segment) const
     {
         return segment.size() >= 5;
     }
 
-    bool Detector::segment_diameter_valid(const Segment& segment)
+    bool Detector::segment_diameter_valid(const Segment& segment) const
     {
         double approx_diameter = 0;
         const auto end = segment.end();
@@ -408,14 +426,14 @@ namespace pure {
         }
         return MIN_PUPIL_DIAMETER < approx_diameter && approx_diameter < MAX_PUPIL_DIAMETER;
     }
-    bool Detector::segment_curvature_valid(const Segment& segment)
+    bool Detector::segment_curvature_valid(const Segment& segment) const
     {
         auto rect = minAreaRect(segment);
         double ratio = rect.size.width / rect.size.height;
         return !axes_ratio_is_invalid(ratio);
     }
 
-    inline bool Detector::axes_ratio_is_invalid(double ratio)
+    inline bool Detector::axes_ratio_is_invalid(double ratio) const
     {
         return (
             ratio < params.axes_ratio_threshold ||
@@ -423,7 +441,7 @@ namespace pure {
         );
     }
 
-    bool Detector::fit_ellipse(const Segment& segment, Result& result)
+    bool Detector::fit_ellipse(const Segment& segment, Result& result) const
     {
         // NOTE: This is a cv::RotatedRect, see
         // https://stackoverflow.com/a/32798273 for conversion to ellipse
@@ -457,7 +475,7 @@ namespace pure {
         return true;
     }
 
-    bool Detector::segment_mean_in_ellipse(const Segment& segment, const Result& result)
+    bool Detector::segment_mean_in_ellipse(const Segment& segment, const Result& result) const
     {
         Point2f segment_mean(0, 0);
         for (const auto& p : segment)
@@ -509,19 +527,22 @@ namespace pure {
     }
 
     
-    double Detector::calculate_confidence(const Segment& segment, const Result& result)
+    Confidence Detector::calculate_confidence(const Segment& segment, const Result& result) const
     {
-        double ellipse_aspect_ratio = result.axes.width / result.axes.height;
-        if (ellipse_aspect_ratio > 1.0) ellipse_aspect_ratio = 1.0 / ellipse_aspect_ratio;
+        Confidence conf;
+        conf.aspect_ratio = result.axes.width / result.axes.height;
+        if (conf.aspect_ratio > 1.0) conf.aspect_ratio = 1.0 / conf.aspect_ratio;
 
-        return (
-            ellipse_aspect_ratio
-            + angular_edge_spread(segment, result)
-            + ellipse_outline_constrast(result)
-        ) / 3.0;
+        conf.angular_spread = angular_edge_spread(segment, result);
+        conf.outline_contrast = ellipse_outline_constrast(result);
+
+        // compute value
+        conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
+
+        return conf;
     }
 
-    double Detector::angular_edge_spread(const Segment& segment, const Result& result)
+    double Detector::angular_edge_spread(const Segment& segment, const Result& result) const
     {
         // Q2 | Q1
         // -------
@@ -556,7 +577,7 @@ namespace pure {
         return spread;
     }
 
-    double Detector::ellipse_outline_constrast(const Result& result)
+    double Detector::ellipse_outline_constrast(const Result& result) const
     {
         double contrast = 0;
         // Iterate circle with stride of 10 degrees (all in radians)
@@ -603,6 +624,76 @@ namespace pure {
     }
 
 
+    void Detector::combine_segments()
+    {
+        vector<Segment> combined_segments;
+        vector<Result> combined_results;
+        size_t end1 = segments.size() - 1;
+        size_t end2 = segments.size();
+        for (size_t idx1 = 0; idx1 < end1; ++idx1)
+        {
+            auto& result1 = candidates[idx1];
+            if (result1.confidence.value == 0) continue;
+            auto& segment1 = segments[idx1]; 
+            const auto rect1 = boundingRect(segment1);
+            for (size_t idx2 = idx1 + 1; idx2 < end2; ++idx2)
+            {
+                auto& result2 = candidates[idx1];
+                if (result2.confidence.value == 0) continue;
+                auto& segment2 = segments[idx2];
+                const auto rect2 = boundingRect(segment2);
+
+                if (proper_intersection(rect1, rect2))
+                {
+                    auto new_segment = merge_segments(segment1, segment2);
+                    Result new_result;
+                    evaluate_segment(new_segment, new_result);
+                    if (new_result.confidence.value == 0) continue;
+                    const auto previous_contrast = max(
+                        result1.confidence.outline_contrast,
+                        result2.confidence.outline_contrast
+                    ); 
+                    if (new_result.confidence.outline_contrast <= previous_contrast) continue;
+                    combined_segments.push_back(new_segment);
+                    combined_results.push_back(new_result);
+                }
+            }
+        }
+        segments.insert(segments.end(), combined_segments.begin(), combined_segments.end());
+        candidates.insert(candidates.end(), combined_results.begin(), combined_results.end());
+    }
+
+    bool Detector::proper_intersection(const Rect& r1, const Rect& r2) const
+    {
+        const int x11 = r1.x;
+        const int x12 = r1.x + r1.width;
+        const int x21 = r2.x;
+        const int x22 = r2.x + r2.width;
+        const int y11 = r1.y;
+        const int y12 = r1.y + r1.height;
+        const int y21 = r2.y;
+        const int y22 = r2.y + r2.height;
+
+        return (
+            (x11 < x21 && x21 < x12 && x12 < x22) // x: r1 < r2 and intersecting
+            || (x21 < x11 && x11 < x22 && x22 < x12) // x: r2 < r1 and intersecting
+            || (y11 < y21 && y21 < y12 && y12 < y22) // y: r1 < r2 and intersecting
+            || (y21 < y11 && y11 < y22 && y22 < y12) // y: r2 < r1 and intersecting
+        );
+    }
+    
+    Segment Detector::merge_segments(const Segment& s1, const Segment& s2) const
+    {
+        // TODO: How does this work? Naive approach is to just take the convex hull of
+        // the union of both segments. But there is no documentation.
+        Segment combined;
+        combined.insert(combined.end(), s1.begin(), s1.end());
+        combined.insert(combined.end(), s2.begin(), s2.end());
+        Segment hull;
+        // NOTE: convexHull does not support in-place computation.
+        convexHull(combined, hull);
+        return hull;
+    }
 
 }
 
