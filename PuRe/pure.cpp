@@ -33,12 +33,16 @@ namespace pure {
             if (candidates.size() < i) break;
             auto& r = candidates[i];
             if (r.confidence.value == 0) break;
-            ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360, Scalar(255, 255, 0));
+            ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360,
+                Scalar(
+                    255*r.confidence.aspect_ratio,
+                    255*r.confidence.angular_spread,
+                    255.0*r.confidence.outline_contrast
+                )
+            );
         }
 
-
-        return Result();
-        // return *std::max_element(candidates.begin(), candidates.end());
+        return select_final_segment();
     }
 
     void Detector::preprocess()
@@ -54,6 +58,7 @@ namespace pure {
         Canny(img, img, params.canny_lower_threshold, params.canny_upper_threshold);
 
         cvtColor(img, *debug_img, COLOR_GRAY2BGR);
+        *debug_img *= 0.3;
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
         thin_edges();
@@ -693,6 +698,22 @@ namespace pure {
         // NOTE: convexHull does not support in-place computation.
         convexHull(combined, hull);
         return hull;
+    }
+
+    Result Detector::select_final_segment()
+    {
+        Result initial_pupil = *std::max_element(candidates.begin(), candidates.end());
+        double semi_major = max(initial_pupil.axes.width, initial_pupil.axes.height);
+        Result *candidate = nullptr;
+        for (auto& result : candidates)
+        {
+            if (max(result.axes.width, result.axes.height) > semi_major) continue;
+            if (result.confidence.outline_contrast < 2/3 * initial_pupil.confidence.outline_contrast) continue;
+            if (norm(initial_pupil.center - result.center) > semi_major) continue;
+            if (candidate && result.confidence.value <= candidate->confidence.value) continue;
+            candidate = &result;
+        }
+        return (candidate) ? *candidate : initial_pupil;
     }
 
 }

@@ -14,8 +14,8 @@ namespace pure {
 
 
     struct Parameters {
-        double canny_lower_threshold = 20;
-        double canny_upper_threshold = 150;
+        double canny_lower_threshold = 100;
+        double canny_upper_threshold = 200;
         double min_pupil_diameter_ratio = 0.07 * 2/3;
         double max_pupil_diameter_ratio = 0.29;
         double axes_ratio_threshold = 0.2;
@@ -93,6 +93,9 @@ namespace pure {
         void combine_segments();
         bool proper_intersection(const Rect& r1, const Rect& r2) const;
         Segment merge_segments(const Segment& s1, const Segment& s2) const;
+
+    private:
+        Result select_final_segment();
 
     };
 
