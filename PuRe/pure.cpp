@@ -332,257 +332,87 @@ namespace pure {
         const int W = img.cols;
         const int H = img.rows;
         const double diagonal = sqrt(W * W + H * H);
-        const double MIN_PUPIL_DIAMETER = params.min_pupil_diameter_ratio * diagonal;
-        const double MAX_PUPIL_DIAMETER = params.max_pupil_diameter_ratio * diagonal;
+        MIN_PUPIL_DIAMETER = params.min_pupil_diameter_ratio * diagonal;
+        MAX_PUPIL_DIAMETER = params.max_pupil_diameter_ratio * diagonal;
 
         for (size_t segment_i = 0; segment_i < segments.size(); ++segment_i)
         {
             auto& segment = segments[segment_i];
             auto& result = candidates[segment_i];
 
-
-        	// 3.3.1 Filter segments with < 5 points
-        	if (segment.size() < 5)
+        	// 3.3.1 Filter small segments
+        	if (!segment_large_enough(segment))
         	{
                 result.confidence = 0;
         		continue;
         	}
 
         	// 3.3.2 Filter segments based on approximate diameter
+            if (!segment_diameter_valid(segment))
             {
-                double approx_diameter = 0;
-                const auto end = segment.end();
-                for (auto p1 = segment.begin(); p1 != end; ++p1)
-                {
-                    for (auto p2 = p1 + 1; p2 != end; ++p2)
-                    {
-                        approx_diameter = max(approx_diameter, norm(*p1 - *p2));
-                        // we can early exit, because we will only get bigger
-                        if (approx_diameter > MAX_PUPIL_DIAMETER)
-                        {
-                            break;
-                        }
-                    }
-                    // we can early exit, because we will only get bigger
-                    if (approx_diameter > MAX_PUPIL_DIAMETER)
-                    {
-                        break;
-                    }
-                }
-                if (approx_diameter > MAX_PUPIL_DIAMETER)
-                {
-                    // diameter too large
-                    result.confidence = 0;
-                    continue;
-                }
-                if (approx_diameter < MIN_PUPIL_DIAMETER)
-                {
-                    // diameter too small
-                    result.confidence = 0;
-                    continue;
-                }
+                result.confidence = 0;
+                continue;
             }
 
-            
-
         	// 3.3.3 Filter segments based on curvature approximation
-        	{
-        		auto rect = minAreaRect(segment);
-        		double ratio = rect.size.width / rect.size.height;
-        		if (axes_ratio_is_invalid(ratio))
-        		{
-                    result.confidence = 0;
-        			continue;
-        		}
-        	}
+            if (!segment_curvature_valid(segment))
+            {
+                result.confidence = 0;
+                continue;
+            }
 
         	// 3.3.4 Ellipse fitting
-        	{
-                // NOTE: This is a cv::RotatedRect, see
-                // https://stackoverflow.com/a/32798273 for conversion to ellipse
-                // parameters
-        	    auto fit = fitEllipse(segment);
-
-        		// 	(I) discard if center outside image boundaries
-        		if (fit.center.x < 0 || fit.center.y < 0 || fit.center.x > W || fit.center.y > H)
-        		{
-                    result.confidence = 0;
-        			continue;
-        		}
-
-        		// 	(II) discard if ellipse is too skewed
-        		auto ratio = fit.size.width / fit.size.height;
-        		if (axes_ratio_is_invalid(ratio))
-        		{
-                    result.confidence = 0;
-        			continue;
-        		}
-                
-                result.center = fit.center;
-                result.angle = fit.angle;
-                // NOTE: width always provides the first axis, which corresponds to the
-                // angle. Height provides the second axis, which corresponds to angle +
-                // 90deg. This is NOT related to major/minor axes! But we also don't
-                // need the information of which is the major and which is the minor
-                // axis.
-                result.axes = {
-                    fit.size.width / 2.0f,
-                    fit.size.height / 2.0f
-                };
+        	if (!fit_ellipse(segment, result))
+            {
+                result.confidence = 0;
+                continue;
         	}
-            ellipse(*debug_img, result.center, result.axes, result.angle, 0, 360, Scalar(0, 255, 0));
-
 
         	// 3.3.5 Additional filter
-        	{	
-        		Point2f segment_mean(0, 0);
-        		for (const auto& p : segment)
-        		{
-        			segment_mean += Point2f(p);
-        		}
-        		// NOTE: cv::Point operator /= does not work with size_t scalar
-        		segment_mean.x /= segment.size();
-        		segment_mean.y /= segment.size();
-
-        		// We need to test if the mean lies in the rhombus defined by the
-        		// rotated rect of the ellipse. Essentially each vertex of the
-        		// rhombus corresponds to a midpoint of the sides of the rect.
-        		// Testing is easiest if we don't rotate all points of the rect, but
-        		// rotate the segment_mean backwards, because then we can test
-        		// against the axis-aligned rhombus.
-
-        		// See the following rhombus for reference. Note that we only need
-        		// to test for Q1, since the we can center at (0,0) and the rest is
-        		// symmetry. (not in image coordinates, but y-up)
-        		//   /|\
-        		//  / | \ Q1
-        		// /  |  \
-        		//---------
-        		// \  |  /
-        		//  \ | /
-        		//   \|/
-
-        		// Shift rotation to origin to center at (0,0).
-        		segment_mean -= result.center; 
-        		// Rotate backwards with negative angle
-        		const auto angle_rad = - result.angle * M_PI / 180.0f;
-        		const float angle_cos = static_cast<float>(cos(angle_rad));
-        		const float angle_sin = static_cast<float>(sin(angle_rad));
-        		// We take the abs values to utilize symmetries. This way can do the
-        		// entire testing in Q1 of the rhombus.
-        		Point2f unrotated(
-        			abs(segment_mean.x * angle_cos - segment_mean.y * angle_sin),
-        			abs(segment_mean.x * angle_sin + segment_mean.y * angle_cos)
-        		);
-                
-        		// Discard based on testing first rhombus quadrant Q1. This tests
-        		// for containment in the axis-aligned triangle.
-        		if (
-                    (unrotated.x > result.axes.width) ||
-        		    (unrotated.y > result.axes.height) ||
-        		    ((unrotated.x / result.axes.width) + (unrotated.y / result.axes.height) > 1)
-                )
-                {
-                    result.confidence = 0;
-                    continue;
-                }
-
-        	}
+        	if (!segment_mean_in_ellipse(segment, result))
+            {
+                result.confidence = 0;
+                continue;
+            }
             
-            // Confidence measures
-        	{
-                // check major/minor
-                if (result.axes.width > result.axes.height)
-                {
-                    result.major = result.axes.width;
-                    result.minor = result.axes.height;
-                }
-                else
-                {
-                    result.major = result.axes.height;
-                    result.minor = result.axes.width;
-                }
-
-        		const double ellipse_aspect_ratio = result.minor / result.major;
-
-        		double angular_edge_spread = 0.0;
-        		{
-        			// Q2 | Q1
-        			// -------
-        			// Q3 | Q4
-        			// (not in image coordinates, but y-up)
-        			bool points_in_q1 = false;
-        			bool points_in_q2 = false;
-        			bool points_in_q3 = false;
-        			bool points_in_q4 = false;
-
-        			for (const auto& p : segment)
-        			{
-        				if (p.x > result.center.x)
-        				{
-        					if (p.y > result.center.y) points_in_q1 = true;
-        					else points_in_q4 = true;
-        				}
-        				else
-        				{
-        					if (p.y > result.center.y) points_in_q2 = true;
-        					else points_in_q3 = true;
-        				}
-        				// early exit
-        				if (points_in_q1 && points_in_q2 && points_in_q3 && points_in_q4) break;
-        			}
-                    
-        			if (points_in_q1) angular_edge_spread += 0.25;
-        			if (points_in_q2) angular_edge_spread += 0.25;
-        			if (points_in_q3) angular_edge_spread += 0.25;
-        			if (points_in_q4) angular_edge_spread += 0.25;
-        		}
-
-        		double ellipse_outline_contrast = 0;
-        		{
-        			// Iterate circle with stride of 10 degrees (all in radians)
-        			constexpr double stride = 10 * M_PI / 180.0;
-        			double angle = 0;
-        			// NOTE: A for-loop: for(angle=0; angle < 2*PI; ...) will result
-        			// in 37 iterations because of rounding errors. This will result
-        			// in one line being counted twice.
-        			constexpr int n_iterations = 36;
-        			constexpr int NEIGHBORHOOD_4 = 4;
-        			for (int i = 0; i < n_iterations; ++i)
-        			{
-        				Point2f offset(
-        					static_cast<float>(result.minor * cos(angle)),
-        					static_cast<float>(result.minor * sin(angle))
-        				);
-        				Point2f outline_point = result.center + offset;
-
-        				LineIterator inner_line(*orig_img, result.center, outline_point, NEIGHBORHOOD_4);
-
-        				double inner_avg = 0;
-        				for (int j = 0; j < inner_line.count; j++, ++inner_line)
-        				{
-        					inner_avg += *(*inner_line);
-        				}
-        				inner_avg /= inner_line.count;
-
-
-        				LineIterator outer_line(*orig_img, outline_point, outline_point + offset, NEIGHBORHOOD_4);
-        				double outer_avg = 0;
-        				for (int j = 0; j < outer_line.count; j++, ++outer_line)
-        				{
-        					outer_avg += *(*outer_line);
-        				}
-        				outer_avg /= outer_line.count;
-        				// TODO: How is this actually supposed to be calculated!?
-        				if (inner_avg < outer_avg) ellipse_outline_contrast += 1;
-
-        				angle += stride;
-        			}
-        			ellipse_outline_contrast /= n_iterations;
-        		}
-                result.confidence = (ellipse_aspect_ratio + angular_edge_spread + ellipse_outline_contrast) / 3.0;
-        	}
+            // 3.4  Calculate confidence
+            result.confidence = calculate_confidence(segment, result);
         }
+    }
+
+    inline bool Detector::segment_large_enough(const Segment& segment)
+    {
+        return segment.size() >= 5;
+    }
+
+    bool Detector::segment_diameter_valid(const Segment& segment)
+    {
+        double approx_diameter = 0;
+        const auto end = segment.end();
+        for (auto p1 = segment.begin(); p1 != end; ++p1)
+        {
+            for (auto p2 = p1 + 1; p2 != end; ++p2)
+            {
+                approx_diameter = max(approx_diameter, norm(*p1 - *p2));
+                // we can early exit, because we will only get bigger
+                if (approx_diameter > MAX_PUPIL_DIAMETER)
+                {
+                    break;
+                }
+            }
+            // we can early exit, because we will only get bigger
+            if (approx_diameter > MAX_PUPIL_DIAMETER)
+            {
+                break;
+            }
+        }
+        return MIN_PUPIL_DIAMETER < approx_diameter && approx_diameter < MAX_PUPIL_DIAMETER;
+    }
+    bool Detector::segment_curvature_valid(const Segment& segment)
+    {
+        auto rect = minAreaRect(segment);
+        double ratio = rect.size.width / rect.size.height;
+        return !axes_ratio_is_invalid(ratio);
     }
 
     inline bool Detector::axes_ratio_is_invalid(double ratio)
@@ -592,6 +422,186 @@ namespace pure {
             ratio > 1 && (1.0 / ratio) < params.axes_ratio_threshold
         );
     }
+
+    bool Detector::fit_ellipse(const Segment& segment, Result& result)
+    {
+        // NOTE: This is a cv::RotatedRect, see
+        // https://stackoverflow.com/a/32798273 for conversion to ellipse
+        // parameters. Also below.
+        auto fit = fitEllipse(segment);
+
+        // 	(I) discard if center outside image boundaries
+        if (fit.center.x < 0 || fit.center.y < 0 || fit.center.x > img.cols || fit.center.y > img.rows)
+        {
+            return false;
+        }
+
+        // 	(II) discard if ellipse is too skewed
+        auto ratio = fit.size.width / fit.size.height;
+        if (axes_ratio_is_invalid(ratio))
+        {
+            return false;
+        }
+        
+        result.center = fit.center;
+        result.angle = fit.angle;
+        // NOTE: width always provides the first axis, which corresponds to the
+        // angle. Height provides the second axis, which corresponds to angle +
+        // 90deg. This is NOT related to major/minor axes! But we also don't
+        // need the information of which is the major and which is the minor
+        // axis.
+        result.axes = {
+            fit.size.width / 2.0f,
+            fit.size.height / 2.0f
+        };
+        return true;
+    }
+
+    bool Detector::segment_mean_in_ellipse(const Segment& segment, const Result& result)
+    {
+        Point2f segment_mean(0, 0);
+        for (const auto& p : segment)
+        {
+            segment_mean += Point2f(p);
+        }
+        // NOTE: cv::Point operator /= does not work with size_t scalar
+        segment_mean.x /= segment.size();
+        segment_mean.y /= segment.size();
+
+        // We need to test if the mean lies in the rhombus defined by the
+        // rotated rect of the ellipse. Essentially each vertex of the
+        // rhombus corresponds to a midpoint of the sides of the rect.
+        // Testing is easiest if we don't rotate all points of the rect, but
+        // rotate the segment_mean backwards, because then we can test
+        // against the axis-aligned rhombus.
+
+        // See the following rhombus for reference. Note that we only need
+        // to test for Q1, since the we can center at (0,0) and the rest is
+        // symmetry. (not in image coordinates, but y-up)
+        //   /|\
+        //  / | \ Q1
+        // /  |  \
+        //---------
+        // \  |  /
+        //  \ | /
+        //   \|/
+
+        // Shift rotation to origin to center at (0,0).
+        segment_mean -= result.center; 
+        // Rotate backwards with negative angle
+        const auto angle_rad = - result.angle * M_PI / 180.0f;
+        const float angle_cos = static_cast<float>(cos(angle_rad));
+        const float angle_sin = static_cast<float>(sin(angle_rad));
+        // We take the abs values to utilize symmetries. This way can do the
+        // entire testing in Q1 of the rhombus.
+        Point2f unrotated(
+            abs(segment_mean.x * angle_cos - segment_mean.y * angle_sin),
+            abs(segment_mean.x * angle_sin + segment_mean.y * angle_cos)
+        );
+        
+        // Discard based on testing first rhombus quadrant Q1. This tests
+        // for containment in the axis-aligned triangle.
+        return (
+            (unrotated.x < result.axes.width) &&
+            (unrotated.y < result.axes.height) &&
+            ((unrotated.x / result.axes.width) + (unrotated.y / result.axes.height) < 1)
+        );
+    }
+
+    
+    double Detector::calculate_confidence(const Segment& segment, const Result& result)
+    {
+        double ellipse_aspect_ratio = result.axes.width / result.axes.height;
+        if (ellipse_aspect_ratio > 1.0) ellipse_aspect_ratio = 1.0 / ellipse_aspect_ratio;
+
+        return (
+            ellipse_aspect_ratio
+            + angular_edge_spread(segment, result)
+            + ellipse_outline_constrast(segment, result)
+        ) / 3.0;
+    }
+
+    double Detector::angular_edge_spread(const Segment& segment, const Result& result)
+    {
+        // Q2 | Q1
+        // -------
+        // Q3 | Q4
+        // (not in image coordinates, but y-up)
+        bool points_in_q1 = false;
+        bool points_in_q2 = false;
+        bool points_in_q3 = false;
+        bool points_in_q4 = false;
+
+        for (const auto& p : segment)
+        {
+            if (p.x > result.center.x)
+            {
+                if (p.y > result.center.y) points_in_q1 = true;
+                else points_in_q4 = true;
+            }
+            else
+            {
+                if (p.y > result.center.y) points_in_q2 = true;
+                else points_in_q3 = true;
+            }
+            // early exit
+            if (points_in_q1 && points_in_q2 && points_in_q3 && points_in_q4) break;
+        }
+        
+        double spread = 0.0;
+        if (points_in_q1) spread += 0.25;
+        if (points_in_q2) spread += 0.25;
+        if (points_in_q3) spread += 0.25;
+        if (points_in_q4) spread += 0.25;
+        return spread;
+    }
+
+    double Detector::ellipse_outline_constrast(const Segment& segment, const Result& result)
+    {
+        double contrast = 0;
+        // Iterate circle with stride of 10 degrees (all in radians)
+        constexpr double stride = 10 * M_PI / 180.0;
+        double angle = 0;
+        // NOTE: A for-loop: for(angle=0; angle < 2*PI; ...) will result
+        // in 37 iterations because of rounding errors. This will result
+        // in one line being counted twice.
+        constexpr int n_iterations = 36;
+        constexpr int NEIGHBORHOOD_4 = 4;
+        const double minor = min(result.axes.width, result.axes.height);
+        for (int i = 0; i < n_iterations; ++i)
+        {
+            Point2f offset(
+                static_cast<float>(minor * cos(angle)),
+                static_cast<float>(minor * sin(angle))
+            );
+            Point2f outline_point = result.center + offset;
+
+            LineIterator inner_line(*orig_img, result.center, outline_point, NEIGHBORHOOD_4);
+
+            double inner_avg = 0;
+            for (int j = 0; j < inner_line.count; j++, ++inner_line)
+            {
+                inner_avg += *(*inner_line);
+            }
+            inner_avg /= inner_line.count;
+
+
+            LineIterator outer_line(*orig_img, outline_point, outline_point + offset, NEIGHBORHOOD_4);
+            double outer_avg = 0;
+            for (int j = 0; j < outer_line.count; j++, ++outer_line)
+            {
+                outer_avg += *(*outer_line);
+            }
+            outer_avg /= outer_line.count;
+
+            // TODO: How is this actually supposed to be calculated!?
+            if (inner_avg < outer_avg) contrast += 1;
+
+            angle += stride;
+        }
+        return contrast / n_iterations;
+    }
+
 
 
 }
