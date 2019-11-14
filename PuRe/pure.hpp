@@ -77,7 +77,7 @@ namespace pure {
 
         double calculate_confidence(const Segment& segment, const Result& result);
         double angular_edge_spread(const Segment& segment, const Result& result);
-        double ellipse_outline_constrast(const Segment& segment, const Result& result);
+        double ellipse_outline_constrast(const Result& result);
 
 
     };

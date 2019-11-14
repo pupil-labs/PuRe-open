@@ -517,7 +517,7 @@ namespace pure {
         return (
             ellipse_aspect_ratio
             + angular_edge_spread(segment, result)
-            + ellipse_outline_constrast(segment, result)
+            + ellipse_outline_constrast(result)
         ) / 3.0;
     }
 
@@ -556,7 +556,7 @@ namespace pure {
         return spread;
     }
 
-    double Detector::ellipse_outline_constrast(const Segment& segment, const Result& result)
+    double Detector::ellipse_outline_constrast(const Result& result)
     {
         double contrast = 0;
         // Iterate circle with stride of 10 degrees (all in radians)
