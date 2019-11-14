@@ -1,6 +1,13 @@
 {
     "editor.formatOnSave": false,
     "files.associations": {
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "ios": "cpp",
+        "streambuf": "cpp",
+        "type_traits": "cpp",
+        "xhash": "cpp",
+        "xlocale": "cpp",
+        "xmemory0": "cpp",
+        "xutility": "cpp"
     }
 }
