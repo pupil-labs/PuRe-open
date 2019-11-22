@@ -13,7 +13,7 @@ using namespace cv;
 
 namespace pure {
 
-    Result Detector::detect(const Mat& input_img, Mat* debug_color_img)
+    OutResult Detector::detect(const Mat& input_img, Mat* debug_color_img)
     {
         orig_img = &input_img;
         input_img.copyTo(img);
@@ -27,20 +27,20 @@ namespace pure {
         combine_segments();
 
 
-        std::sort(candidates.rbegin(), candidates.rend());
-        for(int i = 0; i < 10; i++)
-        {
-            if (candidates.size() < i) break;
-            auto& r = candidates[i];
-            if (r.confidence.value == 0) break;
-            ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360,
-                Scalar(
-                    255*r.confidence.aspect_ratio,
-                    255*r.confidence.angular_spread,
-                    255.0*r.confidence.outline_contrast
-                )
-            );
-        }
+        // std::sort(candidates.rbegin(), candidates.rend());
+        // for(int i = 0; i < 10; i++)
+        // {
+        //     if (candidates.size() < i) break;
+        //     auto& r = candidates[i];
+        //     if (r.confidence.value == 0) break;
+        //     ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360,
+        //         Scalar(
+        //             255*r.confidence.aspect_ratio,
+        //             255*r.confidence.angular_spread,
+        //             255.0*r.confidence.outline_contrast
+        //         )
+        //     );
+        // }
 
         return select_final_segment();
     }
@@ -58,7 +58,7 @@ namespace pure {
         Canny(img, img, params.canny_lower_threshold, params.canny_upper_threshold);
 
         cvtColor(img, *debug_img, COLOR_GRAY2BGR);
-        *debug_img *= 0.3;
+        // *debug_img *= 0.3;
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
         thin_edges();
@@ -78,7 +78,7 @@ namespace pure {
         // which would hit the thinning filter with the top-left corner!
         // TODO: Investigate the effect of this.
         break_orthogonals();
-        imshow("filtered", img);
+        // imshow("filtered", img);
     }
 
 
@@ -633,6 +633,7 @@ namespace pure {
     {
         vector<Segment> combined_segments;
         vector<Result> combined_results;
+        if (segments.size() == 0) return; 
         size_t end1 = segments.size() - 1;
         size_t end2 = segments.size();
         for (size_t idx1 = 0; idx1 < end1; ++idx1)
@@ -702,6 +703,10 @@ namespace pure {
 
     Result Detector::select_final_segment()
     {
+        if (candidates.size() == 0)
+        {
+            return Result();
+        }
         Result initial_pupil = *std::max_element(candidates.begin(), candidates.end());
         double semi_major = max(initial_pupil.axes.width, initial_pupil.axes.height);
         Result *candidate = nullptr;
