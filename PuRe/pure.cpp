@@ -26,22 +26,6 @@ namespace pure {
         select_edge_segments();
         combine_segments();
 
-
-        // std::sort(candidates.rbegin(), candidates.rend());
-        // for(int i = 0; i < 10; i++)
-        // {
-        //     if (candidates.size() < i) break;
-        //     auto& r = candidates[i];
-        //     if (r.confidence.value == 0) break;
-        //     ellipse(*debug_img, r.center, r.axes, r.angle, 0, 360,
-        //         Scalar(
-        //             255*r.confidence.aspect_ratio,
-        //             255*r.confidence.angular_spread,
-        //             255.0*r.confidence.outline_contrast
-        //         )
-        //     );
-        // }
-
         return select_final_segment();
     }
 
@@ -56,9 +40,14 @@ namespace pure {
     void Detector::detect_edges()
     {   
         Canny(img, img, params.canny_lower_threshold, params.canny_upper_threshold);
+        
 
-        cvtColor(img, *debug_img, COLOR_GRAY2BGR);
-        // *debug_img *= 0.3;
+        if (debug)
+        {
+            cvtColor(img, *debug_img, CV_GRAY2BGR);
+            *debug_img *= 0.5;
+        }
+
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
         thin_edges();
@@ -78,7 +67,15 @@ namespace pure {
         // which would hit the thinning filter with the top-left corner!
         // TODO: Investigate the effect of this.
         break_orthogonals();
-        // imshow("filtered", img);
+
+        if (debug)
+        {
+            vector<Mat> channels(3);
+            split(*debug_img, channels);
+            channels[0] = 0.5 * img;
+            channels[1] = 0.5 * img;
+            merge(channels, *debug_img);
+        }
     }
 
 

@@ -15,7 +15,8 @@ pure_d = PuReDetector()
 data = []
 
 for subject, video_id, n, target, frame in LPW.video_iterator():
-    print(subject, video_id, n)
+    if n % 100 == 0:
+        print(subject, video_id, n)
 
     frame = cv2.resize(frame, (320, 240))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -25,6 +26,18 @@ for subject, video_id, n, target, frame in LPW.video_iterator():
     t2 = time.perf_counter()
     result_pure = pure_d.detect(gray)
     t3 = time.perf_counter()
+
+
+    # cv2.ellipse(
+    #     frame,
+    #     (int(result_pure["center_x"]), int(result_pure["center_y"])),
+    #     (int(result_pure["first_ax"] / 2), int(result_pure["second_ax"] / 2)),
+    #     int(result_pure["angle"]),
+    #     0, 360, (0, 0, 255)
+    # )
+
+    # cv2.imshow("debug", frame)
+    # cv2.waitKey(1)
 
 
     data.append({
