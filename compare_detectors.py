@@ -17,6 +17,7 @@ data = []
 for subject, video_id, n, target, frame in LPW.video_iterator():
     print(subject, video_id, n)
 
+    frame = cv2.resize(frame, (320, 240))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     t1 = time.perf_counter()
@@ -30,8 +31,8 @@ for subject, video_id, n, target, frame in LPW.video_iterator():
         "subject": subject,
         "video": video_id,
         "frame": n,
-        "target_x": target[0],
-        "target_y": target[1],
+        "target_x": target[0] / 2,
+        "target_y": target[1] / 2,
         "2d.confidence": result_2d["confidence"],
         "2d.angle": result_2d["ellipse"]["angle"],
         "2d.first_ax": result_2d["ellipse"]["axes"][0],
