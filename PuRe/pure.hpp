@@ -88,6 +88,7 @@ namespace pure {
     private:
         // 3.2. Edge Detection and Morphological Manipulation
         void detect_edges();
+        void calculate_canny();
         void thin_edges();
         void break_crossings();
         void straighten_edges();

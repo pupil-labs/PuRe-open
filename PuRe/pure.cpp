@@ -39,8 +39,7 @@ namespace pure {
     
     void Detector::detect_edges()
     {   
-        Canny(img, img, params.canny_lower_threshold, params.canny_upper_threshold);
-        
+        calculate_canny();
 
         if (debug)
         {
@@ -68,16 +67,29 @@ namespace pure {
         // TODO: Investigate the effect of this.
         break_orthogonals();
 
-        if (debug)
+        // if (debug)
+        // {
+        //     vector<Mat> channels(3);
+        //     split(*debug_img, channels);
+        //     channels[0] = 0.5 * img;
+        //     channels[1] = 0.5 * img;
+        //     merge(channels, *debug_img);
+        // }
+    }
+    
+    void Detector::calculate_canny()
+    {
+        int target_n_edgepx = 0.3 * img.size[0] * img.size[1];
+        for (int T = 0; T < 2000; T += 10)
         {
-            vector<Mat> channels(3);
-            split(*debug_img, channels);
-            channels[0] = 0.5 * img;
-            channels[1] = 0.5 * img;
-            merge(channels, *debug_img);
+            Canny(*orig_img, img, 0.3*T, T, 3, true);
+            if (countNonZero(img) < target_n_edgepx)
+            {
+                cout << "T = " << T << " pxs: " << (img.size[0] * img.size[1]) << " targetnpxs: " << target_n_edgepx << " nonzero: " << countNonZero(img) << endl;
+                break;
+            }
         }
     }
-
 
     void Detector::thin_edges()
     {
