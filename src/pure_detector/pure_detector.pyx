@@ -77,6 +77,8 @@ cdef class PuReDetector:
         if debug_img is not None:
             debug_img_data = debug_img
             debug_mat = Mat(image_height, image_width, CV_8UC3, <void *> &debug_img_data[0, 0, 0])
+            result = self.c_detector_ptr.detect(gray_mat, &debug_mat)
+        else:
+            result = self.c_detector_ptr.detect(gray_mat, NULL)
 
-        result = self.c_detector_ptr.detect(gray_mat, &debug_mat)
         return result
