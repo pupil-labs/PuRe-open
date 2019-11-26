@@ -79,16 +79,15 @@ namespace pure {
     
     void Detector::calculate_canny()
     {
-        int target_n_edgepx = 0.3 * img.size[0] * img.size[1];
-        for (int T = 0; T < 2000; T += 10)
+        constexpr double target_edgepx_ratio = 0.06;
+        Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 3, true);
+        const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
+        params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 255;
+        if (debug)
         {
-            Canny(*orig_img, img, 0.3*T, T, 3, true);
-            if (countNonZero(img) < target_n_edgepx)
-            {
-                cout << "T = " << T << " pxs: " << (img.size[0] * img.size[1]) << " targetnpxs: " << target_n_edgepx << " nonzero: " << countNonZero(img) << endl;
-                break;
-            }
+            cout << "T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
         }
+        
     }
 
     void Detector::thin_edges()
