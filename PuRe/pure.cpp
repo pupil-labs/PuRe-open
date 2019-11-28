@@ -79,6 +79,7 @@ namespace pure {
     
     void Detector::calculate_canny()
     {
+        // Canny(*orig_img, img, params.canny_lower_threshold, params.canny_upper_threshold, 3, true);
         constexpr double target_edgepx_ratio = 0.06;
         Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 3, true);
         const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
@@ -593,24 +594,33 @@ namespace pure {
     double Detector::ellipse_outline_constrast(const Result& result) const
     {
         double contrast = 0;
+        constexpr double radian_per_degree = M_PI / 180.0;
         // Iterate circle with stride of 10 degrees (all in radians)
-        constexpr double stride = 10 * M_PI / 180.0;
-        double angle = 0;
-        // NOTE: A for-loop: for(angle=0; angle < 2*PI; ...) will result
+        constexpr double stride = 10 * radian_per_degree;
+        double theta = 0;
+        // NOTE: A for-loop: for(theta=0; theta < 2*PI; ...) will result
         // in 37 iterations because of rounding errors. This will result
         // in one line being counted twice.
         constexpr int n_iterations = 36;
         constexpr int NEIGHBORHOOD_4 = 4;
         const double minor = min(result.axes.width, result.axes.height);
+        const double cos_angle = cos(result.angle * radian_per_degree);
+        const double sin_angle = sin(result.angle * radian_per_degree);
         for (int i = 0; i < n_iterations; ++i)
         {
+            const double x = result.axes.width * cos(theta);
+            const double y = result.axes.height * sin(theta);
             Point2f offset(
-                static_cast<float>(minor * cos(angle)),
-                static_cast<float>(minor * sin(angle))
+                static_cast<float>(x * cos_angle - y * sin_angle),
+                static_cast<float>(y * cos_angle + x * sin_angle)
             );
             Point2f outline_point = result.center + offset;
 
-            LineIterator inner_line(*orig_img, result.center, outline_point, NEIGHBORHOOD_4);
+            Point2f offset_norm = offset / cv::norm(offset);
+            Point2f inner_pt = outline_point - (0.5 * minor) * offset_norm;
+            Point2f outer_pt = outline_point + (0.5 * minor) * offset_norm;
+
+            LineIterator inner_line(*orig_img, inner_pt, outline_point);
 
             double inner_avg = 0;
             for (int j = 0; j < inner_line.count; j++, ++inner_line)
@@ -620,7 +630,7 @@ namespace pure {
             inner_avg /= inner_line.count;
 
 
-            LineIterator outer_line(*orig_img, outline_point, outline_point + offset, NEIGHBORHOOD_4);
+            LineIterator outer_line(*orig_img, outline_point, outer_pt);
             double outer_avg = 0;
             for (int j = 0; j < outer_line.count; j++, ++outer_line)
             {
@@ -628,10 +638,9 @@ namespace pure {
             }
             outer_avg /= outer_line.count;
 
-            // TODO: How is this actually supposed to be calculated!?
             if (inner_avg < outer_avg) contrast += 1;
 
-            angle += stride;
+            theta += stride;
         }
         return contrast / n_iterations;
     }
