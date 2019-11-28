@@ -352,8 +352,7 @@ namespace pure {
 
     void Detector::select_edge_segments()
     {
-        vector<Vec4i> hierarchy;
-        findContours(img, segments, hierarchy, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
+        findContours(img, segments, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
 
         // NOTE: We are essentially re-using the result from previous runs. Need to make
         // sure that either all values will be overwritten or confidence will be set to
@@ -631,8 +630,8 @@ namespace pure {
             inner_avg /= inner_line.count;
 
 
-            LineIterator outer_line(*orig_img, outline_point, outer_pt);
             double outer_avg = 0;
+            LineIterator outer_line(*orig_img, outline_point, outer_pt);
             for (int j = 0; j < outer_line.count; j++, ++outer_line)
             {
                 outer_avg += *(*outer_line);
@@ -730,8 +729,8 @@ namespace pure {
         Result *candidate = nullptr;
         for (auto& result : candidates)
         {
+            if (result.confidence.outline_contrast < 0.75) continue;
             if (max(result.axes.width, result.axes.height) > semi_major) continue;
-            if (result.confidence.outline_contrast < 2/3 * initial_pupil.confidence.outline_contrast) continue;
             if (norm(initial_pupil.center - result.center) > semi_major) continue;
             if (candidate && result.confidence.value <= candidate->confidence.value) continue;
             candidate = &result;
