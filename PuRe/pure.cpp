@@ -617,8 +617,8 @@ namespace pure {
             Point2f outline_point = result.center + offset;
 
             Point2f offset_norm = offset / cv::norm(offset);
-            Point2f inner_pt = outline_point - (0.5 * minor) * offset_norm;
-            Point2f outer_pt = outline_point + (0.5 * minor) * offset_norm;
+            Point2f inner_pt = outline_point - (0.15 * minor) * offset_norm;
+            Point2f outer_pt = outline_point + (0.15 * minor) * offset_norm;
 
             LineIterator inner_line(*orig_img, inner_pt, outline_point);
 
