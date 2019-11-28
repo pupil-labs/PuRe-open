@@ -352,7 +352,8 @@ namespace pure {
 
     void Detector::select_edge_segments()
     {
-        findContours(img, segments, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
+        vector<Vec4i> hierarchy;
+        findContours(img, segments, hierarchy, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
 
         // NOTE: We are essentially re-using the result from previous runs. Need to make
         // sure that either all values will be overwritten or confidence will be set to
