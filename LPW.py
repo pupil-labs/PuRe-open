@@ -1,6 +1,5 @@
 
 import cv2
-from pure_detector import PuReDetector
 
 import imageio
 
