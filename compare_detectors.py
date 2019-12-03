@@ -16,31 +16,34 @@ pure_d = PuReDetector()
 
 data = []
 
-for subject, video_id, n, target, frame in LPW.video_iterator():
+for subject, video_id, n, target, frame in LPW.video_iterator(19, 3):
     if n % 100 == 0:
         print(subject, video_id, n)
 
     frame = cv2.resize(frame, (320, 240))
+
+    debug_img = frame.copy()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     t1 = time.perf_counter()
     # result_2d = pupil_d.detect(gray)
-    result_pure = pure_d.detect(gray)
+    result_pure = pure_d.detect(gray, debug_img)
     t2 = time.perf_counter()
 
 
 
 
-    # cv2.ellipse(
-    #     frame,
-    #     (int(result_pure["center_x"]), int(result_pure["center_y"])),
-    #     (int(result_pure["first_ax"] / 2), int(result_pure["second_ax"] / 2)),
-    #     int(result_pure["angle"]),
-    #     0, 360, (0, 0, 255)
-    # )
+    cv2.ellipse(
+        frame,
+        (int(result_pure["center_x"]), int(result_pure["center_y"])),
+        (int(result_pure["first_ax"]), int(result_pure["second_ax"])),
+        int(result_pure["angle"]),
+        0, 360, (0, 0, 255)
+    )
 
-    # cv2.imshow("debug", frame)
-    # cv2.waitKey(1)
+    cv2.imshow("img", frame)
+    cv2.imshow("debug", debug_img)
+    cv2.waitKey(-1)
 
 
     data.append({
@@ -68,7 +71,7 @@ for subject, video_id, n, target, frame in LPW.video_iterator():
         "method": "pure.adjusted1",
     })
 
-df = pd.DataFrame(data)
+# df = pd.DataFrame(data)
 
-df.to_pickle("data.pure.adjusted1.pkl")
+# df.to_pickle("data.pure.adjusted1.pkl")
 

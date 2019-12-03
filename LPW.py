@@ -9,10 +9,14 @@ import csv
 
 LPW_path = "../LPW"
 
-def video_iterator():
+def video_iterator(fix_subject=None, fix_video=None):
     for video_file in Path(LPW_path).rglob("*.avi"):
         video_id = video_file.stem
         subject = video_file.parent.name
+        if fix_subject is not None and str(fix_subject) != subject:
+            continue
+        if fix_video is not None and str(fix_video) != video_id:
+            continue
         info_file = video_file.with_suffix(".txt")
 
         with info_file.open() as f:
