@@ -17,7 +17,7 @@ int main()
 	cout << "Hello CMake!" << endl;
 
 
-	VideoCapture cap(R"(..\LPW\19\3.avi)");
+	VideoCapture cap(R"(..\LPW\21\11.avi)");
 	if (!cap.isOpened())
 	{
 		cerr << "could not open video file!" << endl;
@@ -31,7 +31,7 @@ int main()
 		Mat gray;
 		bool running = true;
 		int n = 0;
-		int FRAME = 0;
+		int FRAME = 411;
 		while (running)
 		{
 			cap.read(color);
@@ -40,15 +40,22 @@ int main()
 				cerr << "Empty frame!" << endl;
 				break;
 			}
+			resize(color, color, Size(320, 240));
+        	cvtColor(color, gray, COLOR_BGR2GRAY);
+
 			if (FRAME >= 0 && n < FRAME) {
+				cout << n << " --> " << FRAME << endl;
+				detector.detect(gray);
 				n++;
 				continue;
 			}
-			resize(color, color, Size(320, 240));
 
-        	cvtColor(color, gray, COLOR_BGR2GRAY);
+
 			debug = color.clone();
 			auto result = detector.detect(gray, &debug);
+
+			
+			
 
 			ellipse(color, Point((int)result.center_x, (int)result.center_y), Size((int)result.first_ax, (int)result.second_ax), result.angle, 0, 360, Scalar(0, 0, 255));
 			circle(color, Point((int)result.center_x, (int)result.center_y), 2, Scalar(0, 0, 255), 2);

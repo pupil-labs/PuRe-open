@@ -74,6 +74,15 @@ namespace pure {
 
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
+
+        if (debug)
+        {
+            Mat tmp;
+            cvtColor(img, tmp, CV_GRAY2BGR);
+            tmp *= 0.4;
+            imshow("Canny", tmp);
+        }
+
         thin_edges();
         break_crossings();
         straighten_edges();
@@ -107,18 +116,214 @@ namespace pure {
         //     merge(channels, *debug_img);
         // }
     }
+
+    Mat original_canny(const Mat &in, const bool blurImage, const bool useL2, const int bins, const float nonEdgePixelsRatio, const float lowHighThresholdRatio)
+    {
+        Mat blurred, dx, dy, magnitude, edgeType, edge;
+        Size workingSize(in.cols, in.rows);
+        blurred = Mat::zeros(workingSize, CV_8U);
+        dx = Mat::zeros(workingSize, CV_32F);
+        dy = Mat::zeros(workingSize, CV_32F);
+        magnitude = Mat::zeros(workingSize, CV_32F);
+        edgeType = Mat::zeros(workingSize, CV_8U);
+        edge = Mat::zeros(workingSize, CV_8U);
+        (void)useL2;
+        /*
+        * Smoothing and directional derivatives
+        * TODO: adapt sizes to image size
+        */
+        if (blurImage)
+        {
+            Size blurSize(5, 5);
+            GaussianBlur(in, blurred, blurSize, 1.5, 1.5, BORDER_REPLICATE);
+        }
+        else
+            blurred = in;
+
+        Sobel(blurred, dx, dx.type(), 1, 0, 7, 1, 0, BORDER_REPLICATE);
+        Sobel(blurred, dy, dy.type(), 0, 1, 7, 1, 0, BORDER_REPLICATE);
+
+        /*
+        *  Magnitude
+        */
+        double minMag = 0;
+        double maxMag = 0;
+
+        cv::magnitude(dx, dy, magnitude);
+        cv::minMaxLoc(magnitude, &minMag, &maxMag);
+
+        /*
+        *  Threshold selection based on the magnitude histogram
+        */
+        float low_th = 0;
+        float high_th = 0;
+
+        // Normalization
+        magnitude = magnitude / maxMag;
+
+        // Histogram
+        auto histogram = std::make_unique<int[]>(bins);
+        Mat res_idx = (bins - 1) * magnitude;
+        res_idx.convertTo(res_idx, CV_16U);
+        short *p_res_idx = nullptr;
+        for (int i = 0; i < res_idx.rows; i++)
+        {
+            p_res_idx = res_idx.ptr<short>(i);
+            for (int j = 0; j < res_idx.cols; j++)
+                histogram[p_res_idx[j]]++;
+        }
+
+        // Ratio
+        int sum = 0;
+        const int nonEdgePixels = static_cast<int>(nonEdgePixelsRatio * in.rows * in.cols);
+        for (int i = 0; i < bins; i++)
+        {
+            sum += histogram[i];
+            if (sum > nonEdgePixels)
+            {
+                high_th = static_cast<float>(i + 1) / bins;
+                break;
+            }
+        }
+        low_th = lowHighThresholdRatio * high_th;
+
+        /*
+        *  Non maximum supression
+        */
+        enum
+        {
+            NON_EDGE = 0,
+            POSSIBLE_EDGE = 128,
+            EDGE = 255
+        };
+        const float tg22_5 = 0.4142135623730950488016887242097f;
+        const float tg67_5 = 2.4142135623730950488016887242097f;
+        edgeType.setTo(NON_EDGE);
+        for (int i = 1; i < magnitude.rows - 1; i++)
+        {
+            auto edgeTypePtr = edgeType.ptr<uchar>(i);
+
+            const auto &p_res = magnitude.ptr<float>(i);
+            const auto &p_res_t = magnitude.ptr<float>(i - 1);
+            const auto &p_res_b = magnitude.ptr<float>(i + 1);
+            const auto &p_x = dx.ptr<float>(i);
+            const auto &p_y = dy.ptr<float>(i);
+
+            for (int j = 1; j < magnitude.cols - 1; j++)
+            {
+
+                const auto &m = p_res[j];
+                if (m < low_th)
+                    continue;
+
+                const auto &iy = p_y[j];
+                const auto &ix = p_x[j];
+
+                const auto y = abs(iy);
+                const auto x = abs(ix);
+                const auto val = p_res[j] > high_th ? EDGE : POSSIBLE_EDGE;
+                const auto tg22_5x = tg22_5 * x;
+
+                if (y < tg22_5x)
+                {
+                    if (m > p_res[j - 1] && m >= p_res[j + 1])
+                        edgeTypePtr[j] = val;
+                }
+                else
+                {
+                    float tg67_5x = tg67_5 * x;
+                    if (y > tg67_5x)
+                    {
+                        if (m > p_res_b[j] && m >= p_res_t[j])
+                            edgeTypePtr[j] = val;
+                    }
+                    else
+                    {
+                        if ((iy <= 0) == (ix <= 0))
+                        {
+                            if (m > p_res_t[j - 1] && m >= p_res_b[j + 1])
+                                edgeTypePtr[j] = val;
+                        }
+                        else
+                        {
+                            if (m > p_res_b[j - 1] && m >= p_res_t[j + 1])
+                                edgeTypePtr[j] = val;
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        *  Hystheresis
+        */
+        const int area = edgeType.cols * edgeType.rows;
+        unsigned int lines_idx = 0;
+        int idx = 0;
+
+        vector<int> lines;
+        edge.setTo(NON_EDGE);
+        for (int i = 1; i < edgeType.rows - 1; i++)
+        {
+            for (int j = 1; j < edgeType.cols - 1; j++)
+            {
+
+                if (edgeType.data[idx + j] != EDGE || edge.data[idx + j] != NON_EDGE)
+                    continue;
+
+                edge.data[idx + j] = EDGE;
+                lines_idx = 1;
+                lines.clear();
+                lines.push_back(idx + j);
+                unsigned int akt_idx = 0;
+
+                while (akt_idx < lines_idx)
+                {
+                    int akt_pos = lines[akt_idx];
+                    akt_idx++;
+
+                    if (akt_pos - edgeType.cols - 1 < 0 || akt_pos + edgeType.cols + 1 >= area)
+                        continue;
+
+                    for (int k1 = -1; k1 < 2; k1++)
+                        for (int k2 = -1; k2 < 2; k2++)
+                        {
+                            if (edge.data[(akt_pos + (k1 * edgeType.cols)) + k2] != NON_EDGE || edgeType.data[(akt_pos + (k1 * edgeType.cols)) + k2] == NON_EDGE)
+                                continue;
+                            edge.data[(akt_pos + (k1 * edgeType.cols)) + k2] = EDGE;
+                            lines.push_back((akt_pos + (k1 * edgeType.cols)) + k2);
+                            lines_idx++;
+                        }
+                }
+            }
+            idx += edgeType.cols;
+        }
+
+        return edge;
+    }
     
     void Detector::calculate_canny()
     {
         // Canny(*orig_img, img, params.canny_lower_threshold, params.canny_upper_threshold, 3, true);
+
         constexpr double target_edgepx_ratio = 0.06;
-        Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 3, true);
-        const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
-        params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 255;
-        if (debug)
+        for (int i = 0; i < 10; ++i)
         {
-            cout << "T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+            Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 5, true);
+            const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
+            const double difference = ratio - target_edgepx_ratio;
+            if (abs(difference) < 0.01) break;
+
+            // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
+            params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
+            if (debug)
+            {
+                cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+            }
         }
+
+
+        // img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
         
     }
 
@@ -400,9 +605,28 @@ namespace pure {
         {
         	evaluate_segment(segments[segment_i], candidates[segment_i]);
         }
+
+        if (debug)
+        {
+            int n = 0;
+            for (const auto& result : candidates)
+            {
+                if (result.confidence.value != 0) n++;
+            }
+            if (n == 0)
+            {
+                auto tmp = debug_img->clone();
+                Result dummy;
+                for (const auto& segment : segments)
+                {
+                    evaluate_segment(segment, dummy, &tmp);
+                }
+                imshow("Segments", tmp);
+            }
+        }
     }
 
-    void Detector::evaluate_segment(const Segment& segment, Result& result) const
+    void Detector::evaluate_segment(const Segment& segment, Result& result, Mat* tmp) const
     {
         // 3.3.1 Filter small segments
         if (!segment_large_enough(segment))
@@ -414,6 +638,10 @@ namespace pure {
         // 3.3.2 Filter segments based on approximate diameter
         if (!segment_diameter_valid(segment))
         {
+            if (debug && tmp)
+            {
+                polylines(*tmp, segment, false, Scalar(255, 0, 0));
+            }
             result.confidence.value = 0;
             return;
         }
@@ -421,6 +649,10 @@ namespace pure {
         // 3.3.3 Filter segments based on curvature approximation
         if (!segment_curvature_valid(segment))
         {
+            if (debug && tmp)
+            {
+                polylines(*tmp, segment, false, Scalar(255, 255, 0));
+            }
             result.confidence.value = 0;
             return;
         }
@@ -428,6 +660,10 @@ namespace pure {
         // 3.3.4 Ellipse fitting
         if (!fit_ellipse(segment, result))
         {
+            if (debug && tmp)
+            {
+                polylines(*tmp, segment, false, Scalar(0, 255, 0));
+            }
             result.confidence.value = 0;
             return;
         }
@@ -435,12 +671,21 @@ namespace pure {
         // 3.3.5 Additional filter
         if (!segment_mean_in_ellipse(segment, result))
         {
+            if (debug && tmp)
+            {
+                polylines(*tmp, segment, false, Scalar(0, 255, 255));
+            }
             result.confidence.value = 0;
             return;
         }
         
         // 3.4  Calculate confidence
         result.confidence = calculate_confidence(segment, result);
+
+        if (debug && tmp && result.confidence.value == 0)
+        {
+            polylines(*tmp, segment, false, Scalar(0, 0, 255));
+        }
     }
 
     inline bool Detector::segment_large_enough(const Segment& segment) const
@@ -653,7 +898,11 @@ namespace pure {
             Point2f inner_pt = outline_point - (0.15 * minor) * offset_norm;
             Point2f outer_pt = outline_point + (0.15 * minor) * offset_norm;
 
-            if (!bounds.contains(inner_pt) || !bounds.contains(outer_pt)) continue;
+            if (!bounds.contains(inner_pt) || !bounds.contains(outer_pt)) 
+            {
+                theta += stride;
+                continue;
+            }
 
             LineIterator inner_line(*orig_img, inner_pt, outline_point);
 
@@ -782,6 +1031,7 @@ namespace pure {
         int i = 0;
         for (auto& result : candidates)
         {
+            if (result.confidence.value == 0) continue;
             if (result.confidence.outline_contrast < 0.75) continue;
             if (max(result.axes.width, result.axes.height) > semi_major) continue;
             if (norm(initial_pupil.center - result.center) > semi_major) continue;

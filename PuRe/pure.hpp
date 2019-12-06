@@ -101,7 +101,7 @@ namespace pure {
         double MIN_PUPIL_DIAMETER, MAX_PUPIL_DIAMETER;
         void select_edge_segments();
 
-        void evaluate_segment(const Segment& segment, Result& result) const;
+        void evaluate_segment(const Segment& segment, Result& result, Mat* tmp=nullptr) const;
         bool segment_large_enough(const Segment& segment) const;
         bool segment_diameter_valid(const Segment& segment) const;
         bool segment_curvature_valid(const Segment& segment) const;
