@@ -606,6 +606,7 @@ namespace pure {
         const double minor = min(result.axes.width, result.axes.height);
         const double cos_angle = cos(result.angle * radian_per_degree);
         const double sin_angle = sin(result.angle * radian_per_degree);
+        const Rect bounds = Rect(0, 0, orig_img->cols, orig_img->rows);
         for (int i = 0; i < n_iterations; ++i)
         {
             const double x = result.axes.width * cos(theta);
@@ -619,6 +620,8 @@ namespace pure {
             Point2f offset_norm = offset / cv::norm(offset);
             Point2f inner_pt = outline_point - (0.15 * minor) * offset_norm;
             Point2f outer_pt = outline_point + (0.15 * minor) * offset_norm;
+
+            if (!bounds.contains(inner_pt) || !bounds.contains(outer_pt)) continue;
 
             LineIterator inner_line(*orig_img, inner_pt, outline_point);
 
