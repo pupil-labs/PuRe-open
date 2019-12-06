@@ -691,21 +691,8 @@ namespace pure {
 
     bool Detector::proper_intersection(const Rect& r1, const Rect& r2) const
     {
-        const int x11 = r1.x;
-        const int x12 = r1.x + r1.width;
-        const int x21 = r2.x;
-        const int x22 = r2.x + r2.width;
-        const int y11 = r1.y;
-        const int y12 = r1.y + r1.height;
-        const int y21 = r2.y;
-        const int y22 = r2.y + r2.height;
-
-        return (
-            (x11 < x21 && x21 < x12 && x12 < x22) // x: r1 < r2 and intersecting
-            || (x21 < x11 && x11 < x22 && x22 < x12) // x: r2 < r1 and intersecting
-            || (y11 < y21 && y21 < y12 && y12 < y22) // y: r1 < r2 and intersecting
-            || (y21 < y11 && y11 < y22 && y22 < y12) // y: r2 < r1 and intersecting
-        );
+        const Rect r = r1 & r2; // intersection
+        return r.area() > 0 && r != r1 && r != r2;
     }
     
     Segment Detector::merge_segments(const Segment& s1, const Segment& s2) const
