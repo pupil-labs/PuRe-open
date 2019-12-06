@@ -607,6 +607,7 @@ namespace pure {
         const double cos_angle = cos(result.angle * radian_per_degree);
         const double sin_angle = sin(result.angle * radian_per_degree);
         const Rect bounds = Rect(0, 0, orig_img->cols, orig_img->rows);
+        constexpr int bias = 5;
         for (int i = 0; i < n_iterations; ++i)
         {
             const double x = result.axes.width * cos(theta);
@@ -641,7 +642,7 @@ namespace pure {
             }
             outer_avg /= outer_line.count;
 
-            if (inner_avg < outer_avg) contrast += 1;
+            if (inner_avg + bias < outer_avg) contrast += 1;
 
             theta += stride;
         }
