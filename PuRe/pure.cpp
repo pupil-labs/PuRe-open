@@ -1,6 +1,7 @@
 ﻿#include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <string>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -24,6 +25,34 @@ namespace pure {
         detect_edges();
 
         select_edge_segments();
+
+        if (debug)
+        {
+            int i = 0;
+            for (size_t segment_i = 0; segment_i < segments.size(); ++segment_i)
+            {
+                auto& segment = segments[segment_i];
+                auto& result = candidates[segment_i];
+                if (result.confidence.value == 0) continue;
+
+                auto tmp = debug_img->clone();
+
+                ellipse(tmp, Point(result.center), Size(result.axes), result.angle, 0, 360, Scalar(255, 0, 255));
+                
+                int bar_w = 20;
+                int bar_h = 50;
+                rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
+                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
+                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
+                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+                
+                ellipse_outline_constrast(result, &tmp);
+
+                imshow(string("Segment ") + to_string(i), tmp);
+                i++;
+            }
+        }
+
         combine_segments();
 
         return select_final_segment();
@@ -41,11 +70,7 @@ namespace pure {
     {   
         calculate_canny();
 
-        if (debug)
-        {
-            cvtColor(img, *debug_img, CV_GRAY2BGR);
-            *debug_img *= 0.5;
-        }
+
 
         // TODO: is canny already thresholded?
 		threshold(img, img, 127, 255, THRESH_BINARY);
@@ -66,6 +91,12 @@ namespace pure {
         // which would hit the thinning filter with the top-left corner!
         // TODO: Investigate the effect of this.
         break_orthogonals();
+
+        if (debug)
+        {
+            cvtColor(img, *debug_img, CV_GRAY2BGR);
+            *debug_img *= 0.4;
+        }
 
         // if (debug)
         // {
@@ -591,7 +622,7 @@ namespace pure {
         return spread;
     }
 
-    double Detector::ellipse_outline_constrast(const Result& result) const
+    double Detector::ellipse_outline_constrast(const Result& result, Mat* tmp) const
     {
         double contrast = 0;
         constexpr double radian_per_degree = M_PI / 180.0;
@@ -643,6 +674,15 @@ namespace pure {
             outer_avg /= outer_line.count;
 
             if (inner_avg + bias < outer_avg) contrast += 1;
+            if (debug && tmp != nullptr)
+            {
+                line(
+                    *tmp,
+                    inner_pt,
+                    outer_pt,
+                    (inner_avg + bias < outer_avg) ? Scalar(0, 255, 0) : Scalar(0, 0, 255)
+                );
+            }
 
             theta += stride;
         }
@@ -681,6 +721,27 @@ namespace pure {
                         result2.confidence.outline_contrast
                     ); 
                     if (new_result.confidence.outline_contrast <= previous_contrast) continue;
+
+                    if (debug)
+                    {
+                        auto tmp = debug_img->clone();
+
+                        rectangle(tmp, rect1, Scalar(255, 255, 0));
+                        rectangle(tmp, rect2, Scalar(0, 255, 255));
+                        ellipse(tmp, Point(new_result.center), Size(new_result.axes), new_result.angle, 0, 360, Scalar(255, 0, 255));
+                        
+                        int bar_w = 20;
+                        int bar_h = 50;
+                        rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
+                        rectangle(tmp, Rect(0, 0, bar_w, new_result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
+                        rectangle(tmp, Rect(bar_w, 0, bar_w, new_result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
+                        rectangle(tmp, Rect(2*bar_w, 0, bar_w, new_result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+
+                        ellipse_outline_constrast(new_result, &tmp);
+
+                        imshow(string("Combined ") + to_string(combined_results.size()), tmp);
+                    }
+
                     combined_segments.push_back(new_segment);
                     combined_results.push_back(new_result);
                 }
@@ -718,6 +779,7 @@ namespace pure {
         Result initial_pupil = *std::max_element(candidates.begin(), candidates.end());
         double semi_major = max(initial_pupil.axes.width, initial_pupil.axes.height);
         Result *candidate = nullptr;
+        int i = 0;
         for (auto& result : candidates)
         {
             if (result.confidence.outline_contrast < 0.75) continue;
@@ -725,6 +787,23 @@ namespace pure {
             if (norm(initial_pupil.center - result.center) > semi_major) continue;
             if (candidate && result.confidence.value <= candidate->confidence.value) continue;
             candidate = &result;
+            if (debug)
+            {
+                auto tmp = debug_img->clone();
+
+                ellipse(tmp, Point(result.center), Size(result.axes), result.angle, 0, 360, Scalar(255, 0, 255));
+                
+                int bar_w = 20;
+                int bar_h = 50;
+                rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
+                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
+                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
+                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+                
+                ellipse_outline_constrast(result, &tmp);
+
+                imshow(string("Final ") + to_string(i), tmp);
+            }
         }
         return (candidate) ? *candidate : initial_pupil;
     }

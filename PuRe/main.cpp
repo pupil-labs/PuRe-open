@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
@@ -16,7 +17,7 @@ int main()
 	cout << "Hello CMake!" << endl;
 
 
-	VideoCapture cap(R"(..\LPW\1\1.avi)");
+	VideoCapture cap(R"(..\LPW\19\3.avi)");
 	if (!cap.isOpened())
 	{
 		cerr << "could not open video file!" << endl;
@@ -29,6 +30,8 @@ int main()
 		Mat debug;
 		Mat gray;
 		bool running = true;
+		int n = 0;
+		int FRAME = 0;
 		while (running)
 		{
 			cap.read(color);
@@ -36,6 +39,10 @@ int main()
 			{
 				cerr << "Empty frame!" << endl;
 				break;
+			}
+			if (FRAME >= 0 && n < FRAME) {
+				n++;
+				continue;
 			}
 			resize(color, color, Size(320, 240));
 
@@ -46,12 +53,14 @@ int main()
 			ellipse(color, Point((int)result.center_x, (int)result.center_y), Size((int)result.first_ax, (int)result.second_ax), result.angle, 0, 360, Scalar(0, 0, 255));
 			circle(color, Point((int)result.center_x, (int)result.center_y), 2, Scalar(0, 0, 255), 2);
 			imshow("Color", color);
+
+			putText(debug, to_string(n), Point(0, 240), CV_FONT_HERSHEY_PLAIN, 1, Scalar(255, 255, 255));
 			imshow("Debug", debug);
 
-			if (waitKey(1) >= 0)
-			{
-				break;
-			}
+			int KEY_ESC = 27;
+			if(waitKey(-1) == KEY_ESC) running = false;
+            destroyAllWindows();
+			n++;
 		}
 	}
 	return 0;

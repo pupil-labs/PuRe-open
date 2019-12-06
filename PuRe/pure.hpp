@@ -111,7 +111,7 @@ namespace pure {
 
         Confidence calculate_confidence(const Segment& segment, const Result& result) const;
         double angular_edge_spread(const Segment& segment, const Result& result) const;
-        double ellipse_outline_constrast(const Result& result) const;
+        double ellipse_outline_constrast(const Result& result, Mat* tmp=nullptr) const;
 
     private:
         // 3.5. Conditional Segment Combination
