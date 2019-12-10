@@ -17,7 +17,7 @@ int main()
 	cout << "Hello CMake!" << endl;
 
 
-	VideoCapture cap(R"(..\LPW\21\11.avi)");
+	VideoCapture cap("../LPW/21/11.avi");
 	if (!cap.isOpened())
 	{
 		cerr << "could not open video file!" << endl;
