@@ -1,5 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
+file(GLOB MAIN_SRC
+	"*.hpp"
+	"*.cpp"
+)
+
+message(STATUS "Detected source files: ${MAIN_SRC}")
+
+add_executable (main ${MAIN_SRC})
 
 if(MSVC)
 
@@ -62,14 +70,7 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 
-file(GLOB MAIN_SRC
-	"*.hpp"
-	"*.cpp"
-)
 
-message(STATUS "Detected source files: ${MAIN_SRC}")
-
-add_executable (main ${MAIN_SRC})
 target_link_libraries(main ${OpenCV_LIBS})
 
 
