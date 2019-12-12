@@ -31,7 +31,7 @@ int main()
 		Mat gray;
 		bool running = true;
 		int n = 0;
-		int FRAME = 411;
+		int FRAME = 0;
 		while (running)
 		{
 			cap.read(color);

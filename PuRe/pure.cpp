@@ -190,6 +190,8 @@ namespace pure {
         }
         low_th = lowHighThresholdRatio * high_th;
 
+        cout << "pure thresholds: " << low_th << " - " << high_th << endl;
+
         /*
         *  Non maximum supression
         */
@@ -336,7 +338,7 @@ namespace pure {
         
 
         // // Custom adaptive canny after PuRe
-        // special_canny();
+        special_canny();
     }
 
 
@@ -345,9 +347,14 @@ namespace pure {
         GaussianBlur(*orig_img, img, Size(5, 5), 1.5, 1.5, BORDER_REPLICATE);
 
         // gradient magnitude
-        Sobel(img, dx, CV_32F, 1, 0, 5, 1, 0, BORDER_REPLICATE);
-        Sobel(img, dy, CV_32F, 0, 1, 5, 1, 0, BORDER_REPLICATE);
+        Sobel(img, dx, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
+        Sobel(img, dy, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
         magnitude = Mat::zeros(dx.size(), CV_32F);
+        // Note on angle:
+        //   right: 0/360 deg
+        //   down: 90 deg
+        //   left: 180 deg
+        //   up: 270 deg
         cv::cartToPolar(dx, dy, magnitude, magnitude_angle);
         {
             double max_mag;
@@ -355,61 +362,92 @@ namespace pure {
             magnitude *= 255.0 / max_mag;
         }
 
-        
+        magnitude.convertTo(img, img.type());
+        imshow("magnitude", img);
+
+        for (int r = 0; r < magnitude.rows; ++r)
+        {
+            for (int c = 0; c < magnitude.cols; ++c)
+            {
+                const auto& val = magnitude.ptr<float>(r)[c];
+                auto& dbg = debug_img->ptr<Vec3b>(r)[c];
+                if (val > 0.03*255)
+                {
+                    auto& angle = magnitude_angle.ptr<float>(r)[c];
+                    if (angle < M_PI_2) dbg = Vec3b(255, 0, 0);
+                    else if (angle < M_PI) dbg = Vec3b(0, 255, 0);
+                    else if (angle < 3*M_PI_2) dbg = Vec3b(0, 0, 255);
+                    else dbg = Vec3b(255, 255, 0);
+                }
+
+            }
+        }
+        imshow("angles", *debug_img);
 
 
 
         // non maximum suppression
         {
+            Mat lookup;
+            magnitude.copyTo(lookup);
+
             constexpr double M_PI_8 = M_PI_4 / 2.0;
             const int rows = magnitude.rows - 1;
             const int cols = magnitude.cols - 1;
-            float *above_row, *current_row, *below_row, *angle_row;
+            float *above_row, *current_row, *below_row, *result_row, *angle_row;
             for (int r = 1; r < rows; ++r)
             {   
-                above_row = magnitude.ptr<float>(r - 1);
-                current_row = magnitude.ptr<float>(r);
-                below_row = magnitude.ptr<float>(r + 1);
+                above_row = lookup.ptr<float>(r - 1);
+                current_row = lookup.ptr<float>(r);
+                below_row = lookup.ptr<float>(r + 1);
+                result_row = magnitude.ptr<float>(r);
                 angle_row = magnitude_angle.ptr<float>(r);
                 for (int c = 0; c < cols; ++c)
                 {
                     auto& center = current_row[c];
-                    // these values will get thrown out anyways later
-                    // if (center < threshold_low) 
-                    // {
-                    //     center = 0;
-                    //     continue;
-                    // }
                     
                     bool is_maximum;
                     // maps [0, 2PI] to [0, PI]
                     const auto angle = M_PI - abs(angle_row[c] - M_PI);
+                    cout << "angle: " << (angle_row[c] * 180 / M_PI) << " mapped: " << (angle * 180 / M_PI) << endl;
+                    auto& dbg = debug_img->ptr<Vec3b>(r)[c];
                     if (angle < M_PI_8 || angle > 7 * M_PI_8)
                     {
                         // horizontal
                         is_maximum = (center > current_row[c - 1]) && (center > current_row[c + 1]);
+                        dbg = Vec3b(0, 0, 255);
                     }
                     else if (angle < 3 * M_PI_8)
                     {
                         // diagonal (/)
                         is_maximum = (center > below_row[c - 1]) && (center > above_row[c + 1]);
+                        dbg = Vec3b(255, 0, 255);
                     }
                     else if (angle < 5 * M_PI_8)
                     {
                         // vertical
                         is_maximum = (center > below_row[c]) && (center > above_row[c]);
+                        dbg = Vec3b(0, 255, 0);
                     }
-                    else
+                    else if (angle < 7 * M_PI_8)
                     {
                         // diagonal (\)
                         is_maximum = (center > below_row[c + 1]) && (center > above_row[c - 1]);
+                        dbg = Vec3b(255, 255, 0);
                     }
+                    else cout << "!!!!" << angle << endl;
 
-                    if (!is_maximum) center = 0;
-                    // else if (center > threshold_high) center = 255;
+                    if (!is_maximum || center < 0.03*255) result_row[c] = 0;
+                    else if (center > 0.1*255) result_row[c] = 255;
+                    else result_row[c] = 128;
                 }
             }
         }
+
+        magnitude.convertTo(img, img.type());
+        imshow("maxima", img);
+        imshow("angles2", *debug_img);
+        return;
 
 
         // normalize for histogram binning
