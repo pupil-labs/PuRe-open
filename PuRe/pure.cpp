@@ -2,9 +2,12 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <queue>
+#include <tuple>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/core/ocl.hpp>
 
 #include "pure.hpp"
 
@@ -73,7 +76,7 @@ namespace pure {
 
 
         // TODO: is canny already thresholded?
-		threshold(img, img, 127, 255, THRESH_BINARY);
+		// threshold(img, img, 127, 255, THRESH_BINARY);
 
         if (debug)
         {
@@ -254,6 +257,8 @@ namespace pure {
             }
         }
 
+        imshow("edgeType", edgeType);
+
         /*
         *  Hystheresis
         */
@@ -304,27 +309,240 @@ namespace pure {
     
     void Detector::calculate_canny()
     {
+        // // Using just base opencv canny
         // Canny(*orig_img, img, params.canny_lower_threshold, params.canny_upper_threshold, 3, true);
 
-        constexpr double target_edgepx_ratio = 0.06;
-        for (int i = 0; i < 10; ++i)
-        {
-            Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 5, true);
-            const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
-            const double difference = ratio - target_edgepx_ratio;
-            if (abs(difference) < 0.01) break;
 
-            // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
-            params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
-            if (debug)
-            {
-                cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+        // // Custom naive adaptive canny implementation
+        // constexpr double target_edgepx_ratio = 0.06;
+        // for (int i = 0; i < 10; ++i)
+        // {
+        //     Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 7, true);
+        //     const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
+        //     const double difference = ratio - target_edgepx_ratio;
+        //     if (abs(difference) < 0.01) break;
+
+        //     // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
+        //     params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
+        //     if (debug)
+        //     {
+        //         cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+        //     }
+        // }
+
+
+        // Use original PuRe canny
+        img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
+        
+
+        // // Custom adaptive canny after PuRe
+        // special_canny();
+    }
+
+
+    void Detector::special_canny()
+    {
+        GaussianBlur(*orig_img, img, Size(5, 5), 1.5, 1.5, BORDER_REPLICATE);
+
+        // gradient magnitude
+        Sobel(img, dx, CV_32F, 1, 0, 5, 1, 0, BORDER_REPLICATE);
+        Sobel(img, dy, CV_32F, 0, 1, 5, 1, 0, BORDER_REPLICATE);
+        magnitude = Mat::zeros(dx.size(), CV_32F);
+        cv::cartToPolar(dx, dy, magnitude, magnitude_angle);
+        {
+            double max_mag;
+            minMaxLoc(magnitude, nullptr, &max_mag);
+            magnitude *= 255.0 / max_mag;
+        }
+
+        
+
+
+
+        // non maximum suppression
+        {
+            constexpr double M_PI_8 = M_PI_4 / 2.0;
+            const int rows = magnitude.rows - 1;
+            const int cols = magnitude.cols - 1;
+            float *above_row, *current_row, *below_row, *angle_row;
+            for (int r = 1; r < rows; ++r)
+            {   
+                above_row = magnitude.ptr<float>(r - 1);
+                current_row = magnitude.ptr<float>(r);
+                below_row = magnitude.ptr<float>(r + 1);
+                angle_row = magnitude_angle.ptr<float>(r);
+                for (int c = 0; c < cols; ++c)
+                {
+                    auto& center = current_row[c];
+                    // these values will get thrown out anyways later
+                    // if (center < threshold_low) 
+                    // {
+                    //     center = 0;
+                    //     continue;
+                    // }
+                    
+                    bool is_maximum;
+                    // maps [0, 2PI] to [0, PI]
+                    const auto angle = M_PI - abs(angle_row[c] - M_PI);
+                    if (angle < M_PI_8 || angle > 7 * M_PI_8)
+                    {
+                        // horizontal
+                        is_maximum = (center > current_row[c - 1]) && (center > current_row[c + 1]);
+                    }
+                    else if (angle < 3 * M_PI_8)
+                    {
+                        // diagonal (/)
+                        is_maximum = (center > below_row[c - 1]) && (center > above_row[c + 1]);
+                    }
+                    else if (angle < 5 * M_PI_8)
+                    {
+                        // vertical
+                        is_maximum = (center > below_row[c]) && (center > above_row[c]);
+                    }
+                    else
+                    {
+                        // diagonal (\)
+                        is_maximum = (center > below_row[c + 1]) && (center > above_row[c - 1]);
+                    }
+
+                    if (!is_maximum) center = 0;
+                    // else if (center > threshold_high) center = 255;
+                }
             }
         }
 
 
-        // img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
+        // normalize for histogram binning
+        constexpr int n_bins = 64;
+        // NOTE: The bin_factor needs to be a bit smaller than n_bins in order to map
+        // 1.0 still to the last bin.
+        constexpr float bin_factor = n_bins * 0.9999f;
+        {
+            magnitude *= bin_factor / 255.0;
+        }
+
+        // histogram
+        array<size_t, n_bins> histogram;
+        {
+            histogram.fill(0);
+            const int rows = magnitude.rows;
+            const int cols = magnitude.cols;
+            float *current;
+            for (int r = 0; r < rows; ++r)
+            {
+                current = magnitude.ptr<float>(r);
+                for (int c = 0; c < cols; ++c)
+                {
+                    size_t index = static_cast<size_t>(current[c]);
+                    histogram[index]++;
+                }
+            }
+        }
+
+        // threshold calculation based on histogram
+        float threshold_high, threshold_low;
+        {
+            const size_t min_non_edge_pixels = static_cast<size_t>(0.9 * magnitude.total());
+            size_t sum = 0;
+            int bin;
+            for (bin = 0; bin < n_bins; ++bin)
+            {
+                sum += histogram[bin];
+                if (sum > min_non_edge_pixels) break;
+            }
+            float to_uchar = 255.0f / bin_factor;
+            magnitude *= to_uchar;
+            threshold_high = (bin + 1) * to_uchar;
+            threshold_low = 0.4f * threshold_high;
+            cout << "Thresholds: " << threshold_low << " - " << threshold_high << endl;
+        }
+
+
         
+
+
+        // hysteresis
+        {
+            const int rows = magnitude.rows - 1;
+            const int cols = magnitude.cols - 1;
+            int r, c;
+            float *above, *current, *below;
+            struct Coords
+            {
+                int r, c;
+                Coords(int r, int c) : r(r), c(c) {};
+            };
+            queue<Coords> weak_egdes_candidates;
+            // Generally it is enough to just move weak edge candidates that fulfill the
+            // hysteresis condition to threshold_high and then just threshold the image
+            // on threshold_high.
+            // Iterate once through the image to collect all candidates (weak egde
+            // pixels that are neighbors of edge pixels). Then iterate the candidates as
+            // long as there are any.
+            for (r = 1; r < rows; ++r)
+            {
+                above = magnitude.ptr<float>(r - 1);
+                current = magnitude.ptr<float>(r);
+                below = magnitude.ptr<float>(r + 1);
+                for (c = 1; c < cols; ++c)
+                {
+                    if (current[c] > threshold_high)
+                    {
+                        current[c] = 255;
+                        // check if neighbors are candidates (i.e. between thresholds)
+                        if (threshold_low < above[c - 1] && above[c - 1] < threshold_high) weak_egdes_candidates.emplace(r - 1, c - 1);
+                        if (threshold_low < above[c] && above[c] < threshold_high) weak_egdes_candidates.emplace(r - 1, c);
+                        if (threshold_low < above[c + 1] && above[c + 1] < threshold_high) weak_egdes_candidates.emplace(r - 1, c + 1);
+                        if (threshold_low < current[c - 1] && current[c - 1] < threshold_high) weak_egdes_candidates.emplace(r, c - 1);
+                        if (threshold_low < current[c + 1] && current[c + 1] < threshold_high) weak_egdes_candidates.emplace(r, c + 1);
+                        if (threshold_low < below[c - 1] && below[c - 1] < threshold_high) weak_egdes_candidates.emplace(r + 1, c - 1);
+                        if (threshold_low < below[c] && below[c] < threshold_high) weak_egdes_candidates.emplace(r + 1, c);
+                        if (threshold_low < below[c + 1] && below[c + 1] < threshold_high) weak_egdes_candidates.emplace(r + 1, c + 1);
+                    }
+                }
+            }
+            while (!weak_egdes_candidates.empty())
+            {
+                cout << "n weak candidates: " << weak_egdes_candidates.size() << endl;
+                const Coords candidate = weak_egdes_candidates.front();
+                weak_egdes_candidates.pop();
+                const int r = candidate.r;
+                const int c = candidate.c;
+                current = magnitude.ptr<float>(r);
+                current[c] = 255;
+                // ignore border pixels
+                if (r == 0 || r == rows || c == 0 || c == cols) continue;
+
+                above = magnitude.ptr<float>(r - 1);
+                below = magnitude.ptr<float>(r + 1);
+                // check if neighbors are candidates (i.e. between thresholds)
+                if (threshold_low < above[c - 1] && above[c - 1] < threshold_high) weak_egdes_candidates.emplace(r - 1, c - 1);
+                if (threshold_low < above[c] && above[c] < threshold_high) weak_egdes_candidates.emplace(r - 1, c);
+                if (threshold_low < above[c + 1] && above[c + 1] < threshold_high) weak_egdes_candidates.emplace(r - 1, c + 1);
+                if (threshold_low < current[c - 1] && current[c - 1] < threshold_high) weak_egdes_candidates.emplace(r, c - 1);
+                if (threshold_low < current[c + 1] && current[c + 1] < threshold_high) weak_egdes_candidates.emplace(r, c + 1);
+                if (threshold_low < below[c - 1] && below[c - 1] < threshold_high) weak_egdes_candidates.emplace(r + 1, c - 1);
+                if (threshold_low < below[c] && below[c] < threshold_high) weak_egdes_candidates.emplace(r + 1, c);
+                if (threshold_low < below[c + 1] && below[c + 1] < threshold_high) weak_egdes_candidates.emplace(r + 1, c + 1);
+            }
+        }
+
+
+
+        magnitude.convertTo(img, img.type());
+        // threshold(img, img, threshold_high, 255.0, THRESH_BINARY);
+
+        int sum = 0;
+        for (int r = 0; r < img.rows; ++r)
+        {
+            uchar *current = img.ptr(r);
+            for (int c = 0; c < img.cols; ++c)
+            {
+                if (current[c] > 127) ++sum;
+            }
+        }
+        cout << "ratio: " << (double(sum) / img.total()) << endl;
+
     }
 
     void Detector::thin_edges()
