@@ -1,20 +1,17 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-
-set(OPENCV_INSTALL_LOCATION "NOT SET" CACHE PATH "Path to installed OpenCV folder.")
-
-message(STATUS "Checking config...")
-message(STATUS "  - OPENCV_INSTALL_LOCATION: ${OPENCV_INSTALL_LOCATION}")
-if(OPENCV_INSTALL_LOCATION STREQUAL "NOT SET")
-	message(FATAL_ERROR "Need to set OPENCV_INSTALL_LOCATION!")
-endif()
 
 if(MSVC)
 
 	message(STATUS "Detected MSVC compiler")
+
+	set(OPENCV_INSTALL_LOCATION "NOT SET" CACHE PATH "Path to installed OpenCV folder.")
+
+	message(STATUS "Checking config...")
+	message(STATUS "  - OPENCV_INSTALL_LOCATION: ${OPENCV_INSTALL_LOCATION}")
+	if(OPENCV_INSTALL_LOCATION STREQUAL "NOT SET")
+		message(FATAL_ERROR "Need to set OPENCV_INSTALL_LOCATION!")
+	endif()
 
 	# Compiler flags for Windows MSVC
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4") # MSVC warning levels: W3 < W4 < Wall
@@ -25,19 +22,44 @@ if(MSVC)
 	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 	set(OpenCV_DIR "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\lib")
-	find_package(OpenCV REQUIRED)
-	message(STATUS "OpenCV library status:")
-	message(STATUS "    config: ${OpenCV_DIR}")
-	message(STATUS "    version: ${OpenCV_VERSION}")
-	message(STATUS "    libraries: ${OpenCV_LIBS}")
-	message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
+	add_custom_command(TARGET main POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_ffmpeg345.dll" $<TARGET_FILE_DIR:main>
+)
+
+
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+
+	message(STATUS "Detected g++ compiler: ${CMAKE_CXX_COMPILER}")
+
+
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
+	# Compiler flags for GCC
+	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+
+	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 else()
 
-	message(SEND_ERROR "Compiler other than MSVC detected. Not yet supported!")
+	message(SEND_ERROR "Unsupported compiler! ${CMAKE_CXX_COMPILER}")
 
 endif()
+
+
+find_package(OpenCV REQUIRED)
+message(STATUS "OpenCV library status:")
+message(STATUS "    config: ${OpenCV_DIR}")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 
 file(GLOB MAIN_SRC
@@ -50,10 +72,4 @@ message(STATUS "Detected source files: ${MAIN_SRC}")
 add_executable (main ${MAIN_SRC})
 target_link_libraries(main ${OpenCV_LIBS})
 
-add_custom_command(TARGET main POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_ffmpeg345.dll" $<TARGET_FILE_DIR:main>
-)
+
