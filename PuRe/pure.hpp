@@ -90,7 +90,7 @@ namespace pure {
         // 3.2. Edge Detection and Morphological Manipulation
         void detect_edges();
         void calculate_canny();
-        Mat dx, dy, magnitude, magnitude_angle;
+        Mat dx, dy, magnitude, magnitude_angle, lookup;
         void special_canny();
         void thin_edges();
         void break_crossings();

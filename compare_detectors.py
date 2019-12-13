@@ -68,10 +68,10 @@ for subject, video_id, n, target, frame in LPW.video_iterator():
         "center_y": result_pure["center_y"],
 
         "time": t2 - t1,
-        "method": "pure.adjusted2.iterative_canny_a5",
+        "method": "pure.adjusted2.special_canny",
     })
 
 df = pd.DataFrame(data)
 
-df.to_pickle("data.pure.adjusted2.iterative_canny_a5.pkl")
+df.to_pickle("data.pure.adjusted2.special_canny.pkl")
 
