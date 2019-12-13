@@ -409,6 +409,7 @@ namespace pure {
                     bool is_maximum;
                     // maps [0, 2PI] to [0, PI]
                     const auto angle = M_PI - abs(angle_row[c] - M_PI);
+                    // TODO: fix angle computation, flip diagonals!
                     cout << "angle: " << (angle_row[c] * 180 / M_PI) << " mapped: " << (angle * 180 / M_PI) << endl;
                     auto& dbg = debug_img->ptr<Vec3b>(r)[c];
                     if (angle < M_PI_8 || angle > 7 * M_PI_8)
