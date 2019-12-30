@@ -100,10 +100,10 @@ if platform.system() == "Windows":
     ]
 else:
     extra_compile_args += [
-        "-std=c++11",
+        "-std=c++17",
         # apply all recommended speed optimization (note -O3 is typically not recommeded
         # as it heavily relies on well-written code)
-        "-O2",
+        "-O3",
     ]
 
 
