@@ -30,10 +30,10 @@ include_dirs += [
 # Platform-specific setup
 if platform.system() == "Windows":
     # legacy fallback for old manual windows setup
-    OPENCV = "C:\\work\\opencv\\build"
+    OPENCV = "C:\\Users\\PFA\\Downloads\\opencv\\build"
     include_dirs.append(f"{OPENCV}\\include")
     library_dirs.append(f"{OPENCV}\\x64\\vc14\\lib")
-    libraries.append("opencv_world345")
+    libraries.append("opencv_world412")
 
 else:
     # Opencv

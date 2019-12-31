@@ -12,6 +12,9 @@
 using namespace std;
 using namespace cv;
 
+// for opencv 4
+#define CV_FONT_HERSHEY_PLAIN HersheyFonts::FONT_HERSHEY_PLAIN
+
 int main()
 {
 	cout << "Hello CMake!" << endl;

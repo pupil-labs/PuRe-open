@@ -32,11 +32,17 @@ if(MSVC)
 	set(OpenCV_DIR "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\lib")
 
 	add_custom_command(TARGET main POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.dll" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.pdb" $<TARGET_FILE_DIR:main>
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_ffmpeg345.dll" $<TARGET_FILE_DIR:main>
+	# COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.dll" $<TARGET_FILE_DIR:main>
+	# COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345.pdb" $<TARGET_FILE_DIR:main>
+	# COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.dll" $<TARGET_FILE_DIR:main>
+	# COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world345d.pdb" $<TARGET_FILE_DIR:main>
+	# COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_ffmpeg345.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world412.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world412.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world412d.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\x64\\vc15\\bin\\opencv_world412d.pdb" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_videoio_ffmpeg412.dll" $<TARGET_FILE_DIR:main>
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENCV_INSTALL_LOCATION}\\build\\bin\\opencv_videoio_ffmpeg412_64.dll" $<TARGET_FILE_DIR:main>
 )
 
 
