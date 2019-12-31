@@ -315,22 +315,22 @@ namespace pure {
         // Canny(*orig_img, img, params.canny_lower_threshold, params.canny_upper_threshold, 3, true);
 
 
-        // // Custom naive adaptive canny implementation
-        // constexpr double target_edgepx_ratio = 0.06;
-        // for (int i = 0; i < 10; ++i)
-        // {
-        //     Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 7, true);
-        //     const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
-        //     const double difference = ratio - target_edgepx_ratio;
-        //     if (abs(difference) < 0.01) break;
+        // Custom naive adaptive canny implementation
+        constexpr double target_edgepx_ratio = 0.06;
+        for (int i = 0; i < 10; ++i)
+        {
+            Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 5, true);
+            const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
+            const double difference = ratio - target_edgepx_ratio;
+            if (abs(difference) < 0.01) break;
 
-        //     // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
-        //     params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
-        //     if (debug)
-        //     {
-        //         cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
-        //     }
-        // }
+            // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
+            params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
+            if (debug)
+            {
+                cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+            }
+        }
 
 
         // // Use original PuRe canny
@@ -338,7 +338,7 @@ namespace pure {
         
 
         // // Custom adaptive canny after PuRe
-        special_canny();
+        // special_canny();
     }
 
 

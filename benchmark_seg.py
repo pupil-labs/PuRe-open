@@ -19,11 +19,16 @@ detectors = {
 for name, detector in detectors.items():
     data = []
 
+    method = f"{name}.large"
+
     for part, n, frame, center, axes, angle in eye_seg.video_iterator():
         if n % 100 == 0:
             print(name, part, n)
 
-        # frame = cv2.resize(frame, (320, 240))
+        scale_factor = min(320 / frame.shape[1], 240 / frame.shape[0])
+        # scale_factor = 1.0
+
+        frame = cv2.resize(frame, (0, 0), fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         t1 = time.perf_counter()
@@ -34,9 +39,9 @@ for name, detector in detectors.items():
             "part": part,
             "frame": n,
             "time": t2 - t1,
-            "method": name,
-            "target_center": np.array(center),
-            "target_axes": np.array(axes),
+            "method": method,
+            "target_center": np.array(center) * scale_factor,
+            "target_axes": np.array(axes) * scale_factor,
             "target_angle": angle,
             "confidence": result["confidence"],
         }
@@ -52,10 +57,6 @@ for name, detector in detectors.items():
 
         data.append(entry)
 
-        if len(data) > 1000:
-            break
-
-
     df = pd.DataFrame(data)
-    df.to_pickle(f"eyeseg_benchmark.{name}.pkl")
+    df.to_pickle(f"eyeseg_benchmark.{method}.pkl")
 
