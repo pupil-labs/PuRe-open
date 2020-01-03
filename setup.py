@@ -38,13 +38,13 @@ if platform.system() == "Windows":
 else:
     # Opencv
     opencv_include_dirs = [
-        "/usr/local/opt/opencv/include",  # old opencv brew (v3)
-        "/usr/local/opt/opencv@3/include",  # new opencv@3 brew
+        # "/usr/local/opt/opencv/include",  # old opencv brew (v3)
+        # "/usr/local/opt/opencv@3/include",  # new opencv@3 brew
         "/usr/local/include/opencv4",  # new opencv brew (v4)
     ]
     opencv_library_dirs = [
-        "/usr/local/opt/opencv/lib",  # old opencv brew (v3)
-        "/usr/local/opt/opencv@3/lib",  # new opencv@3 brew
+        # "/usr/local/opt/opencv/lib",  # old opencv brew (v3)
+        # "/usr/local/opt/opencv@3/lib",  # new opencv@3 brew
         "/usr/local/lib",  # new opencv brew (v4)
     ]
     opencv_libraries = [
@@ -128,6 +128,16 @@ extensions = [
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
+    ),
+    Extension(
+        name="pure_detector.ellipse_utils",
+        sources=[
+            f"{package_dir}/pure_detector/ellipse_utils.pyx",
+            "PuRe/utils.cpp"
+        ],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        include_dirs=include_dirs,
     ),
 ]
 ########################################################################################

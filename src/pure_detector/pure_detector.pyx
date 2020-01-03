@@ -57,6 +57,8 @@ cdef class PuReDetector:
         gray_img: np.ndarray,
         debug_img: T.Optional[np.ndarray]=None,
     ):
+        # TODO: This returns semi-axes! The other detectors expect full-axes!
+        # This needs to be adjusted before finalizing!
         return self.c_detect(gray_img, debug_img)
 
     cdef OutResult c_detect(

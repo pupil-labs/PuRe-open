@@ -45,9 +45,9 @@ namespace pure {
                 int bar_w = 20;
                 int bar_h = 50;
                 rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
-                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
-                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
+                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
+                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
                 
                 ellipse_outline_constrast(result, &tmp);
 
@@ -81,7 +81,7 @@ namespace pure {
         if (debug)
         {
             Mat tmp;
-            cvtColor(img, tmp, CV_GRAY2BGR);
+            cvtColor(img, tmp, cv::COLOR_GRAY2BGR);
             tmp *= 0.4;
             imshow("Canny", tmp);
         }
@@ -106,7 +106,7 @@ namespace pure {
 
         if (debug)
         {
-            cvtColor(img, *debug_img, CV_GRAY2BGR);
+            cvtColor(img, *debug_img, cv::COLOR_GRAY2BGR);
             *debug_img *= 0.4;
         }
 
@@ -190,7 +190,7 @@ namespace pure {
         }
         low_th = lowHighThresholdRatio * high_th;
 
-        cout << "pure thresholds: " << low_th << " - " << high_th << endl;
+        // cout << "pure thresholds: " << low_th << " - " << high_th << endl;
 
         /*
         *  Non maximum supression
@@ -259,7 +259,7 @@ namespace pure {
             }
         }
 
-        imshow("edgeType", edgeType);
+        // imshow("edgeType", edgeType);
 
         /*
         *  Hystheresis
@@ -316,25 +316,25 @@ namespace pure {
 
 
         // Custom naive adaptive canny implementation
-        constexpr double target_edgepx_ratio = 0.06;
-        for (int i = 0; i < 10; ++i)
-        {
-            Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 5, true);
-            const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
-            const double difference = ratio - target_edgepx_ratio;
-            if (abs(difference) < 0.01) break;
+        // constexpr double target_edgepx_ratio = 0.06;
+        // for (int i = 0; i < 10; ++i)
+        // {
+        //     Canny(*orig_img, img, 0.3*params.canny_upper_threshold, params.canny_upper_threshold, 7, true);
+        //     const double ratio = ((double)countNonZero(img)) / (img.size[0] * img.size[1]);
+        //     const double difference = ratio - target_edgepx_ratio;
+        //     if (abs(difference) < 0.01) break;
 
-            // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
-            params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
-            if (debug)
-            {
-                cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
-            }
-        }
+        //     // TODO: Whats the range of gradient magnitudes for Sobel width 5 and L2 norm?
+        //     params.canny_upper_threshold += (ratio - target_edgepx_ratio) * 1023;
+        //     if (debug)
+        //     {
+        //         cout << "(" << i << ") T: " << params.canny_upper_threshold << " -> Ratio: " << ratio << endl;
+        //     }
+        // }
 
 
         // // Use original PuRe canny
-        // img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
+        img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
         
 
         // // Custom adaptive canny after PuRe
@@ -1190,9 +1190,9 @@ namespace pure {
                         int bar_w = 20;
                         int bar_h = 50;
                         rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                        rectangle(tmp, Rect(0, 0, bar_w, new_result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
-                        rectangle(tmp, Rect(bar_w, 0, bar_w, new_result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
-                        rectangle(tmp, Rect(2*bar_w, 0, bar_w, new_result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+                        rectangle(tmp, Rect(0, 0, bar_w, new_result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
+                        rectangle(tmp, Rect(bar_w, 0, bar_w, new_result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
+                        rectangle(tmp, Rect(2*bar_w, 0, bar_w, new_result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
 
                         ellipse_outline_constrast(new_result, &tmp);
 
@@ -1254,9 +1254,9 @@ namespace pure {
                 int bar_w = 20;
                 int bar_h = 50;
                 rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), CV_FILLED);
-                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), CV_FILLED);
-                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), CV_FILLED);
+                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
+                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
+                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
                 
                 ellipse_outline_constrast(result, &tmp);
 
