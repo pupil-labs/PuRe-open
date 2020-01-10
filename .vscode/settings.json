@@ -8,6 +8,7 @@
         "xhash": "cpp",
         "xlocale": "cpp",
         "xmemory0": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "limits": "cpp"
     }
 }

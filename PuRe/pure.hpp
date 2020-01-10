@@ -90,8 +90,10 @@ namespace pure {
         // 3.2. Edge Detection and Morphological Manipulation
         void detect_edges();
         void calculate_canny();
-        Mat dx, dy, magnitude, magnitude_angle, lookup;
-        void special_canny();
+        // Mat dx, dy, magnitude, magnitude_angle, lookup;
+        // void special_canny();
+        Mat dx_img, dy_img, mag_img, bin_img;
+        void matlab_style_canny();
         void thin_edges();
         void break_crossings();
         void straighten_edges();

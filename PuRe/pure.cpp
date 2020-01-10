@@ -120,6 +120,129 @@ namespace pure {
         // }
     }
 
+    void Detector::matlab_style_canny()
+    {
+        // NOTE: The canny implementation of OpenCV works different to MATLAB.
+        // Experience proved that the MATLAB implementation seems better suited for
+        // pupil edge detection. This is a very naive implementation of a MATLAB-like
+        // edge detector, based mostly on the hints given in:
+        // https://de.mathworks.com/matlabcentral/answers/458235-why-is-the-canny-edge-detection-in-matlab-different-to-opencv#answer_372038
+
+        // TODO: move all matrices into instance to avoid reallocations
+        
+        // (1) Image Smoothing
+        GaussianBlur(*orig_img, img, Size(16, 16), 2, 2, BORDER_REPLICATE);
+
+        // (2) Gradient Computation
+        // Note: although the description recommends DoG gradient computation, we found
+        // that Sobel still works fine enough and is ready-to-use from OpenCV
+        Sobel(img, dx_img, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
+        Sobel(img, dy_img, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
+        magnitude(dx_img, dy_img, mag_img);
+
+        constexpr uchar NO_EDGE = 0;
+        constexpr uchar POTENTIAL_EDGE = 127;
+        constexpr uchar EDGE = 255;
+
+        // (3) Non-maximum Suppression
+        {
+            // Idea: Look at the gradient direction at every edge pixel. Compare the
+            // magnitude with both neighbors along the gradient direction. Set to
+            // NO_EDGE, if pixel does not have maximum magnitude.
+            img.setTo(POTENTIAL_EDGE);
+
+            // Constants for direction comparison
+            constexpr float tan_pi_8 = 0.4142135623f;  // tan(PI/8)
+            constexpr float tan_3pi_8 = 2.4142135623f;  // tan(3PI/8)
+
+            const int rows = mag_img.rows - 1;
+            const int cols = mag_img.cols - 1;
+            uchar *out_row;
+            float *mag_above, *mag_current, *mag_below, *dx_row, *dy_row;
+            int r, c;
+            for (r = 1; r < rows; ++r)
+            {
+                out_row = img.ptr(r);
+                mag_above = mag_img.ptr<float>(r - 1);
+                mag_current = mag_img.ptr<float>(r);
+                mag_below = mag_img.ptr<float>(r + 1);
+                dx_row = dx_img.ptr<float>(r);
+                dy_row = dy_img.ptr<float>(r);
+
+                for (c = 1; c < cols; ++c)
+                {
+                    const uchar mag = mag_current[c];
+
+                    const float dx = dx_row[c];
+                    const float dy = dy_row[c];
+
+                    // By taking the absolute values we can just look at the first
+                    // quadrant. The quadrant is devided in 3 areas:
+                    //   1. angle < PI/8:           horizontal
+                    //   2. PI/8 < angle < 3PI/8:   diagonal
+                    //   3. angle < 3PI/8:          vertical
+                    const float x = abs(dx);
+                    const float y = abs(dy);
+
+                    const float tan_angle = y / x;
+                    bool is_max = false;
+                    if (tan_angle < tan_pi_8)
+                    {
+                        // horizontal
+                        is_max = (mag_current[c - 1] < mag && mag_current[c + 1] <= mag);
+                    }
+                    else if(tan_angle > tan_3pi_8)
+                    {
+                        // vertical
+                        is_max = (mag_above[c] < mag && mag_below[c] <= mag);
+                    }
+                    else
+                    {
+                        // diagonal, look at signs
+                        if (signbit(dx) == signbit(dy))
+                        {
+                            // diagonal (\) 
+                            // NOTE: this is not cartesian, but image coordinates! Both
+                            // positive means bottom-right direction!
+                            is_max = (mag_above[c - 1] < mag && mag_below[c + 1] <= mag);
+                        }
+                        else
+                        {
+                            // diagonal (/)
+                            is_max = (mag_above[c + 1] < mag && mag_below[c - 1] <= mag);
+                        }
+                    }
+                    
+                    // Suppression:
+                    if (!is_max)
+                    {
+                        out_row[c] = NO_EDGE;
+                    }
+                }
+            }
+        }
+
+        // (4) Determining Hysteresis Threshold Limits
+        float thresh_1, thresh_2;
+        {
+            constexpr int n_bins = 64;
+
+            // calculate bin for every pixel
+            double max_mag = 0;
+            minMaxLoc(mag_img, nullptr, &max_mag);
+            bin_img = mag_img * (n_bins - 1) / max_mag;
+
+            // ..... WIP ......
+        }
+
+
+
+
+
+
+
+    }
+
     Mat original_canny(const Mat &in, const bool blurImage, const bool useL2, const int bins, const float nonEdgePixelsRatio, const float lowHighThresholdRatio)
     {
         Mat blurred, dx, dy, magnitude, edgeType, edge;
