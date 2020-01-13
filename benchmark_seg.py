@@ -20,7 +20,7 @@ for large in [False]:
     for name, detector in detectors.items():
         data = []
 
-        method = f"{name}"
+        method = f"{name}.matlab_canny"
         if large:
             method += ".large"
 

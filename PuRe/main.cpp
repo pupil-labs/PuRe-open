@@ -62,6 +62,11 @@ int main()
 			putText(debug, to_string(n), Point(0, 240), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255, 255, 255));
 			imshow("Debug", debug);
 
+			moveWindow("Color", 200, 200);
+			moveWindow("Debug", 600, 200);
+			moveWindow("Matlab Canny", 200, 600);
+			moveWindow("PuRe Canny", 600, 600);
+
 			int KEY_ESC = 27;
 			if(waitKey(-1) == KEY_ESC) running = false;
             destroyAllWindows();

@@ -27,7 +27,7 @@ namespace pure {
 
         preprocess();
         detect_edges();
-        return Result();
+        // return Result();
 
         select_edge_segments();
 
@@ -80,15 +80,15 @@ namespace pure {
         // TODO: is canny already thresholded?
 		// threshold(img, img, 127, 255, THRESH_BINARY);
 
-        if (debug)
-        {
-            Mat tmp;
-            cvtColor(img, tmp, cv::COLOR_GRAY2BGR);
-            tmp *= 0.4;
-            imshow("Canny", tmp);
-        }
+        // if (debug)
+        // {
+        //     Mat tmp;
+        //     cvtColor(img, tmp, cv::COLOR_GRAY2BGR);
+        //     tmp *= 0.4;
+        //     imshow("Canny", tmp);
+        // }
 
-        return;
+        // return;
 
         thin_edges();
         break_crossings();
@@ -123,6 +123,12 @@ namespace pure {
         //     merge(channels, *debug_img);
         // }
     }
+
+    struct Coords
+    {
+        int r, c;
+        Coords(int r = 0, int c = 0): r(r), c(c) {}
+    };
 
     void Detector::matlab_style_canny()
     {
@@ -162,7 +168,7 @@ namespace pure {
             const int rows = mag_img.rows - 1;
             const int cols = mag_img.cols - 1;
             uchar *out_row;
-            float *mag_above, *mag_current, *mag_below, *dx_row, *dy_row;
+            const float *mag_above, *mag_current, *mag_below, *dx_row, *dy_row;
             int r, c;
             for (r = 1; r < rows; ++r)
             {
@@ -175,7 +181,7 @@ namespace pure {
 
                 for (c = 1; c < cols; ++c)
                 {
-                    const uchar mag = mag_current[c];
+                    const float mag = mag_current[c];
 
                     const float dx = dx_row[c];
                     const float dy = dy_row[c];
@@ -227,8 +233,9 @@ namespace pure {
         }
 
         // (4) Determining Hysteresis Threshold Limits
-        float thresh_1 = 0;
-        float thresh_2 = 0;
+        int thresh_1 = 0;
+        int thresh_2 = 0;
+        const int n_pixels = bin_img.rows * bin_img.cols;
         {
             constexpr int n_bins = 64;
 
@@ -251,7 +258,6 @@ namespace pure {
 
             constexpr float t1_percentile = 0.28f;
             constexpr float t2_percentile = 0.7f;
-            const int n_pixels = bin_img.rows * bin_img.cols;
             const int t1_lower_bound = static_cast<int>(ceil(t1_percentile * n_pixels));
             const int t2_lower_bound = static_cast<int>(ceil(t2_percentile * n_pixels));
             int sum = 0;
@@ -260,22 +266,78 @@ namespace pure {
                 sum += bins[i];
                 if (sum >= t1_lower_bound && thresh_1 == 0)
                 {
-                    thresh_1 = i / rescaling_factor;
+                    thresh_1 = i;
                 }
                 if (sum >= t2_lower_bound)
                 {
-                    thresh_2 = i / rescaling_factor;
+                    thresh_2 = i;
                     break;
                 }
             }
         }
 
-        
+        // (5) Hysteresis Thresholding
+        {
+            const uchar* bin_row;
+            uchar* out_row;
+            queue<Coords> edge_candidates;
+            int rows = img.rows - 1;
+            int cols = img.cols - 1;
+            for (int r = 1; r < rows; ++r)
+            {
+                bin_row = bin_img.ptr(r);
+                out_row = img.ptr(r);
+                for (int c = 1; c < cols; ++c)
+                {
+                    if (out_row[c] != POTENTIAL_EDGE)
+                    {
+                        // potentially filled by hysteresis or non-maximum suppression,
+                        // dont't check thresholds again!
+                        continue;
+                    }
 
+                    if (bin_row[c] < thresh_1)
+                    {
+                        out_row[c] = NO_EDGE;
+                        continue;
+                    }
+                    if (bin_row[c] < thresh_2)
+                    {
+                        // still only potential edge, might be filled by hysteresis
+                        continue;
+                    }
 
+                    // now we know we are >= thresh_2
+                    out_row[c] = EDGE;
+                    edge_candidates.push(r * img.cols + c);
+                    while (!edge_candidates.empty())
+                    {
+                        Coords candidate = edge_candidates.front();
+                        edge_candidates.pop();
 
+                        if (candidate.r < 1 || candidate.r > rows || candidate.c < 1 || candidate.c > cols)
+                        {
+                            continue;
+                        }
 
+                        for (int dr = -1; dr <= 1; ++dr)
+                        {
+                            for (int dc = -1; dc <= 1; ++dc)
+                            {
+                                const int r2 = candidate.r + dr;
+                                const int c2 = candidate.c + dc;
+                                if (img.ptr(r2)[c2] != POTENTIAL_EDGE) continue;
+                                img.ptr(r2)[c2] = EDGE;
+                                edge_candidates.emplace(r2, c2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
+        // Threshold away potential edges that are left
+        threshold(img, img, POTENTIAL_EDGE + 1, EDGE, CV_8U);
     }
 
     Mat original_canny(const Mat &in, const bool blurImage, const bool useL2, const int bins, const float nonEdgePixelsRatio, const float lowHighThresholdRatio)
@@ -493,6 +555,7 @@ namespace pure {
 
         // // Use original PuRe canny
         // img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
+        // imshow("PuRe Canny", img);
         
 
         // // Custom adaptive canny after PuRe
@@ -500,6 +563,7 @@ namespace pure {
 
         // matlab canny
         matlab_style_canny();
+        // imshow("Matlab Canny", img);
     }
 
 
