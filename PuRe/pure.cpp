@@ -4,6 +4,7 @@
 #include <string>
 #include <queue>
 #include <tuple>
+#include <array>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -26,6 +27,7 @@ namespace pure {
 
         preprocess();
         detect_edges();
+        return Result();
 
         select_edge_segments();
 
@@ -86,6 +88,8 @@ namespace pure {
             imshow("Canny", tmp);
         }
 
+        return;
+
         thin_edges();
         break_crossings();
         straighten_edges();
@@ -131,7 +135,7 @@ namespace pure {
         // TODO: move all matrices into instance to avoid reallocations
         
         // (1) Image Smoothing
-        GaussianBlur(*orig_img, img, Size(16, 16), 2, 2, BORDER_REPLICATE);
+        GaussianBlur(*orig_img, img, Size(15, 15), 2, 2, BORDER_REPLICATE);
 
         // (2) Gradient Computation
         // Note: although the description recommends DoG gradient computation, we found
@@ -223,19 +227,50 @@ namespace pure {
         }
 
         // (4) Determining Hysteresis Threshold Limits
-        float thresh_1, thresh_2;
+        float thresh_1 = 0;
+        float thresh_2 = 0;
         {
             constexpr int n_bins = 64;
 
             // calculate bin for every pixel
             double max_mag = 0;
             minMaxLoc(mag_img, nullptr, &max_mag);
-            bin_img = mag_img * (n_bins - 1) / max_mag;
+            float rescaling_factor = (n_bins - 1) / max_mag;
+            mag_img.convertTo(bin_img, CV_8U, rescaling_factor);
+            // bin_img = mag_img * rescaling_factor;
+            array<int, n_bins> bins {};
+            uchar* row;
+            for (int r = 0; r < bin_img.rows; ++r)
+            {
+                row = bin_img.ptr(r);
+                for (int c = 0; c < bin_img.cols; ++c)
+                {
+                    ++bins[row[c]];
+                }
+            }
 
-            // ..... WIP ......
+            constexpr float t1_percentile = 0.28f;
+            constexpr float t2_percentile = 0.7f;
+            const int n_pixels = bin_img.rows * bin_img.cols;
+            const int t1_lower_bound = static_cast<int>(ceil(t1_percentile * n_pixels));
+            const int t2_lower_bound = static_cast<int>(ceil(t2_percentile * n_pixels));
+            int sum = 0;
+            for (int i = 0; i < n_bins; ++i)
+            {
+                sum += bins[i];
+                if (sum >= t1_lower_bound && thresh_1 == 0)
+                {
+                    thresh_1 = i / rescaling_factor;
+                }
+                if (sum >= t2_lower_bound)
+                {
+                    thresh_2 = i / rescaling_factor;
+                    break;
+                }
+            }
         }
 
-
+        
 
 
 
@@ -457,206 +492,209 @@ namespace pure {
 
 
         // // Use original PuRe canny
-        img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
+        // img = original_canny(*orig_img, true, true, 64, 0.7f, 0.4f);
         
 
         // // Custom adaptive canny after PuRe
         // special_canny();
+
+        // matlab canny
+        matlab_style_canny();
     }
 
 
-    void Detector::special_canny()
-    {
-        GaussianBlur(*orig_img, img, Size(5, 5), 1.5, 1.5, BORDER_REPLICATE);
+    // void Detector::special_canny()
+    // {
+    //     GaussianBlur(*orig_img, img, Size(5, 5), 1.5, 1.5, BORDER_REPLICATE);
 
-        // gradient magnitude
-        Sobel(img, dx, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
-        Sobel(img, dy, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
-        magnitude = Mat::zeros(dx.size(), CV_32F);
-        // angles start with 0 at 3 o'clock and increase clockwise (!)
-        cv::cartToPolar(dx, dy, magnitude, magnitude_angle);
+    //     // gradient magnitude
+    //     Sobel(img, dx, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
+    //     Sobel(img, dy, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
+    //     magnitude = Mat::zeros(dx.size(), CV_32F);
+    //     // angles start with 0 at 3 o'clock and increase clockwise (!)
+    //     cv::cartToPolar(dx, dy, magnitude, magnitude_angle);
 
-        // non maximum suppression
-        {
-            // NOTE: Input and output of the non-maximum suppression cannot be the same
-            // image as this will lead to artifacts!
-            magnitude.copyTo(lookup);
+    //     // non maximum suppression
+    //     {
+    //         // NOTE: Input and output of the non-maximum suppression cannot be the same
+    //         // image as this will lead to artifacts!
+    //         magnitude.copyTo(lookup);
 
-            constexpr double M_PI_8 = M_PI_4 / 2.0;
-            const int rows = magnitude.rows - 1;
-            const int cols = magnitude.cols - 1;
-            float *above_row, *current_row, *below_row, *angle_row, *result_row;
-            for (int r = 1; r < rows; ++r)
-            {   
-                above_row = lookup.ptr<float>(r - 1);
-                current_row = lookup.ptr<float>(r);
-                below_row = lookup.ptr<float>(r + 1);
-                angle_row = magnitude_angle.ptr<float>(r);
-                result_row = magnitude.ptr<float>(r);
-                for (int c = 0; c < cols; ++c)
-                {
-                    auto& center = current_row[c];
+    //         constexpr double M_PI_8 = M_PI_4 / 2.0;
+    //         const int rows = magnitude.rows - 1;
+    //         const int cols = magnitude.cols - 1;
+    //         float *above_row, *current_row, *below_row, *angle_row, *result_row;
+    //         for (int r = 1; r < rows; ++r)
+    //         {   
+    //             above_row = lookup.ptr<float>(r - 1);
+    //             current_row = lookup.ptr<float>(r);
+    //             below_row = lookup.ptr<float>(r + 1);
+    //             angle_row = magnitude_angle.ptr<float>(r);
+    //             result_row = magnitude.ptr<float>(r);
+    //             for (int c = 0; c < cols; ++c)
+    //             {
+    //                 auto& center = current_row[c];
                     
-                    bool is_maximum;
-                    // Map angles (rad) to integers symbolizing which 8th of the
-                    // half-circle the angle lies in. E.g.:
-                    //   0: angle <= 1/8 PI
-                    //   1: 1/8 PI < angle <= 2/8 PI 
-                    const uint8_t direction = static_cast<uint8_t>(fmod(angle_row[c], M_PI) / M_PI_8);
-                    switch (direction)
-                    {
-                        case 0:
-                        case 7:
-                            // horizontal (-)
-                            is_maximum = (center > current_row[c - 1]) && (center > current_row[c + 1]);
-                            break;
-                        case 1:
-                        case 2:
-                            // diagonal (\)
-                            is_maximum = (center > below_row[c + 1]) && (center > above_row[c - 1]);
-                            break;
-                        case 3:
-                        case 4:
-                            // vertical (|)
-                            is_maximum = (center > below_row[c]) && (center > above_row[c]);
-                            break;
-                        case 5:
-                        case 6:
-                            // diagonal (/)
-                            is_maximum = (center > below_row[c - 1]) && (center > above_row[c + 1]);
-                            break;
-                    }
+    //                 bool is_maximum;
+    //                 // Map angles (rad) to integers symbolizing which 8th of the
+    //                 // half-circle the angle lies in. E.g.:
+    //                 //   0: angle <= 1/8 PI
+    //                 //   1: 1/8 PI < angle <= 2/8 PI 
+    //                 const uint8_t direction = static_cast<uint8_t>(fmod(angle_row[c], M_PI) / M_PI_8);
+    //                 switch (direction)
+    //                 {
+    //                     case 0:
+    //                     case 7:
+    //                         // horizontal (-)
+    //                         is_maximum = (center > current_row[c - 1]) && (center > current_row[c + 1]);
+    //                         break;
+    //                     case 1:
+    //                     case 2:
+    //                         // diagonal (\)
+    //                         is_maximum = (center > below_row[c + 1]) && (center > above_row[c - 1]);
+    //                         break;
+    //                     case 3:
+    //                     case 4:
+    //                         // vertical (|)
+    //                         is_maximum = (center > below_row[c]) && (center > above_row[c]);
+    //                         break;
+    //                     case 5:
+    //                     case 6:
+    //                         // diagonal (/)
+    //                         is_maximum = (center > below_row[c - 1]) && (center > above_row[c + 1]);
+    //                         break;
+    //                 }
 
-                    if (!is_maximum) result_row[c] = 0;
-                }
-            }
-        }
+    //                 if (!is_maximum) result_row[c] = 0;
+    //             }
+    //         }
+    //     }
 
-        // normalize for histogram binning
-        // NOTE: The bin_factor needs to be a bit smaller than n_bins in order to map
-        // 1.0 still to the last bin.
-        constexpr int n_bins = 64;
-        constexpr float bin_factor = n_bins * 0.9999f;
-        double max_mag;
-        minMaxLoc(magnitude, nullptr, &max_mag);
-        magnitude *= bin_factor / max_mag;
+    //     // normalize for histogram binning
+    //     // NOTE: The bin_factor needs to be a bit smaller than n_bins in order to map
+    //     // 1.0 still to the last bin.
+    //     constexpr int n_bins = 64;
+    //     constexpr float bin_factor = n_bins * 0.9999f;
+    //     double max_mag;
+    //     minMaxLoc(magnitude, nullptr, &max_mag);
+    //     magnitude *= bin_factor / max_mag;
 
-        // histogram
-        array<size_t, n_bins> histogram;
-        {
-            histogram.fill(0);
-            const int rows = magnitude.rows;
-            const int cols = magnitude.cols;
-            float *current;
-            for (int r = 0; r < rows; ++r)
-            {
-                current = magnitude.ptr<float>(r);
-                for (int c = 0; c < cols; ++c)
-                {
-                    size_t index = static_cast<size_t>(current[c]);
-                    histogram[index]++;
-                }
-            }
-        }
+    //     // histogram
+    //     array<size_t, n_bins> histogram;
+    //     {
+    //         histogram.fill(0);
+    //         const int rows = magnitude.rows;
+    //         const int cols = magnitude.cols;
+    //         float *current;
+    //         for (int r = 0; r < rows; ++r)
+    //         {
+    //             current = magnitude.ptr<float>(r);
+    //             for (int c = 0; c < cols; ++c)
+    //             {
+    //                 size_t index = static_cast<size_t>(current[c]);
+    //                 histogram[index]++;
+    //             }
+    //         }
+    //     }
 
-        // threshold calculation based on histogram
-        float threshold_high, threshold_low;
-        {
-            const size_t min_non_edge_pixels = static_cast<size_t>(0.9 * magnitude.total());
-            size_t sum = 0;
-            int bin;
-            for (bin = 0; bin < n_bins; ++bin)
-            {
-                sum += histogram[bin];
-                if (sum > min_non_edge_pixels) break;
-            }
-            threshold_high = static_cast<float>(bin + 1);
-            threshold_low = 0.4f * threshold_high;
-        }
+    //     // threshold calculation based on histogram
+    //     float threshold_high, threshold_low;
+    //     {
+    //         const size_t min_non_edge_pixels = static_cast<size_t>(0.9 * magnitude.total());
+    //         size_t sum = 0;
+    //         int bin;
+    //         for (bin = 0; bin < n_bins; ++bin)
+    //         {
+    //             sum += histogram[bin];
+    //             if (sum > min_non_edge_pixels) break;
+    //         }
+    //         threshold_high = static_cast<float>(bin + 1);
+    //         threshold_low = 0.4f * threshold_high;
+    //     }
 
-        constexpr uchar NON_EDGE = 0;
-        constexpr uchar WEAK_EDGE = 127;
-        constexpr uchar EDGE = 255;
+    //     constexpr uchar NON_EDGE = 0;
+    //     constexpr uchar WEAK_EDGE = 127;
+    //     constexpr uchar EDGE = 255;
 
-        for (int r = 0; r < img.rows; ++r)
-        {
-            for (int c = 0; c < img.cols; ++c)
-            {
-                const auto& mag = magnitude.ptr<float>(r)[c];
-                auto& out = img.ptr(r)[c];
-                if (mag < threshold_low) out = NON_EDGE;
-                else if (mag < threshold_high) out = WEAK_EDGE;
-                else out = EDGE;
-            }
-        }
+    //     for (int r = 0; r < img.rows; ++r)
+    //     {
+    //         for (int c = 0; c < img.cols; ++c)
+    //         {
+    //             const auto& mag = magnitude.ptr<float>(r)[c];
+    //             auto& out = img.ptr(r)[c];
+    //             if (mag < threshold_low) out = NON_EDGE;
+    //             else if (mag < threshold_high) out = WEAK_EDGE;
+    //             else out = EDGE;
+    //         }
+    //     }
 
-        // hysteresis
-        {
-            const int rows = img.rows - 1;
-            const int cols = img.cols - 1;
-            int r, c;
-            uchar *above, *current, *below;
-            struct Coords
-            {
-                int r, c;
-                Coords(int r, int c) : r(r), c(c) {};
-            };
-            queue<Coords> weak_egdes_candidates;
-            // Generally it is enough to just move weak edge candidates that fulfill the
-            // hysteresis condition to threshold_high and then just threshold the image
-            // on threshold_high.
-            // Iterate once through the image to collect all candidates (weak egde
-            // pixels that are neighbors of edge pixels). Then iterate the candidates as
-            // long as there are any.
-            for (r = 1; r < rows; ++r)
-            {
-                above = img.ptr(r - 1);
-                current = img.ptr(r);
-                below = img.ptr(r + 1);
-                for (c = 1; c < cols; ++c)
-                {
-                    if (current[c] == EDGE)
-                    {
-                        // check if neighbors are candidates (i.e. between thresholds)
-                        if (above[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c - 1);
-                        if (above[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c);
-                        if (above[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c + 1);
-                        if (current[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c - 1);
-                        if (current[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c + 1);
-                        if (below[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c - 1);
-                        if (below[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c);
-                        if (below[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c + 1);
-                    }
-                }
-            }
-            while (!weak_egdes_candidates.empty())
-            {
-                const Coords candidate = weak_egdes_candidates.front();
-                weak_egdes_candidates.pop();
-                r = candidate.r;
-                c = candidate.c;
-                current = img.ptr(r);
-                if (current[c] == EDGE) continue;
-                current[c] = EDGE;
-                // ignore border pixels
-                if (r == 0 || r == rows || c == 0 || c == cols) continue;
+    //     // hysteresis
+    //     {
+    //         const int rows = img.rows - 1;
+    //         const int cols = img.cols - 1;
+    //         int r, c;
+    //         uchar *above, *current, *below;
+    //         struct Coords
+    //         {
+    //             int r, c;
+    //             Coords(int r, int c) : r(r), c(c) {};
+    //         };
+    //         queue<Coords> weak_egdes_candidates;
+    //         // Generally it is enough to just move weak edge candidates that fulfill the
+    //         // hysteresis condition to threshold_high and then just threshold the image
+    //         // on threshold_high.
+    //         // Iterate once through the image to collect all candidates (weak egde
+    //         // pixels that are neighbors of edge pixels). Then iterate the candidates as
+    //         // long as there are any.
+    //         for (r = 1; r < rows; ++r)
+    //         {
+    //             above = img.ptr(r - 1);
+    //             current = img.ptr(r);
+    //             below = img.ptr(r + 1);
+    //             for (c = 1; c < cols; ++c)
+    //             {
+    //                 if (current[c] == EDGE)
+    //                 {
+    //                     // check if neighbors are candidates (i.e. between thresholds)
+    //                     if (above[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c - 1);
+    //                     if (above[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c);
+    //                     if (above[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c + 1);
+    //                     if (current[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c - 1);
+    //                     if (current[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c + 1);
+    //                     if (below[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c - 1);
+    //                     if (below[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c);
+    //                     if (below[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c + 1);
+    //                 }
+    //             }
+    //         }
+    //         while (!weak_egdes_candidates.empty())
+    //         {
+    //             const Coords candidate = weak_egdes_candidates.front();
+    //             weak_egdes_candidates.pop();
+    //             r = candidate.r;
+    //             c = candidate.c;
+    //             current = img.ptr(r);
+    //             if (current[c] == EDGE) continue;
+    //             current[c] = EDGE;
+    //             // ignore border pixels
+    //             if (r == 0 || r == rows || c == 0 || c == cols) continue;
 
-                above = img.ptr(r - 1);
-                below = img.ptr(r + 1);
-                // check if neighbors are candidates (i.e. between thresholds)
-                if (above[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c - 1);
-                if (above[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c);
-                if (above[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c + 1);
-                if (current[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c - 1);
-                if (current[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c + 1);
-                if (below[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c - 1);
-                if (below[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c);
-                if (below[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c + 1);
-            }
-        }
+    //             above = img.ptr(r - 1);
+    //             below = img.ptr(r + 1);
+    //             // check if neighbors are candidates (i.e. between thresholds)
+    //             if (above[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c - 1);
+    //             if (above[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c);
+    //             if (above[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r - 1, c + 1);
+    //             if (current[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c - 1);
+    //             if (current[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r, c + 1);
+    //             if (below[c - 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c - 1);
+    //             if (below[c] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c);
+    //             if (below[c + 1] == WEAK_EDGE) weak_egdes_candidates.emplace(r + 1, c + 1);
+    //         }
+    //     }
 
-        threshold(img, img, WEAK_EDGE + 1, EDGE, THRESH_BINARY);
-    }
+    //     threshold(img, img, WEAK_EDGE + 1, EDGE, THRESH_BINARY);
+    // }
 
     void Detector::thin_edges()
     {
