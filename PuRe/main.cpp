@@ -15,7 +15,9 @@ using namespace cv;
 
 int main()
 {
-	VideoCapture cap("../eye_segmentation_500K/p1_image.mp4");
+	// VideoCapture cap("../eye_segmentation_500K/p1_image.mp4");
+	VideoCapture cap("../eye0.mp4");
+
 	if (!cap.isOpened())
 	{
 		cerr << "could not open video file!" << endl;
@@ -50,7 +52,9 @@ int main()
 
 
 			debug = color.clone();
-			auto result = detector.detect(gray, &debug);
+			// auto result = detector.detect(gray, &debug);
+			auto result = detector.detect(gray);
+			
 
 			
 			
@@ -59,13 +63,13 @@ int main()
 			circle(color, Point((int)result.center_x, (int)result.center_y), 2, Scalar(0, 0, 255), 2);
 			imshow("Color", color);
 
-			putText(debug, to_string(n), Point(0, 240), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255, 255, 255));
-			imshow("Debug", debug);
+			// putText(debug, to_string(n), Point(0, 240), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255, 255, 255));
+			// imshow("Debug", debug);
 
-			moveWindow("Color", 200, 200);
-			moveWindow("Debug", 600, 200);
-			moveWindow("Matlab Canny", 200, 600);
-			moveWindow("PuRe Canny", 600, 600);
+			// moveWindow("Color", 200, 200);
+			// moveWindow("Debug", 600, 200);
+			// moveWindow("Matlab Canny", 200, 600);
+			// moveWindow("PuRe Canny", 600, 600);
 
 			int KEY_ESC = 27;
 			if(waitKey(-1) == KEY_ESC) running = false;

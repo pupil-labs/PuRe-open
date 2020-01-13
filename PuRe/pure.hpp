@@ -10,10 +10,6 @@ using namespace cv;
 
 namespace pure {
 
-    
-
-
-
     struct Parameters {
         double canny_lower_threshold = 100;
         double canny_upper_threshold = 200;
@@ -29,9 +25,6 @@ namespace pure {
         double angular_spread = 0;
         double outline_contrast = 0;
     };
-
-
-
 
     struct Result {
         Point2f center = {0, 0};
@@ -66,6 +59,7 @@ namespace pure {
     };
     
     typedef vector<Point> Segment;
+    
     class Detector
     {
     public:
@@ -89,11 +83,8 @@ namespace pure {
     private:
         // 3.2. Edge Detection and Morphological Manipulation
         void detect_edges();
-        void calculate_canny();
-        // Mat dx, dy, magnitude, magnitude_angle, lookup;
-        // void special_canny();
         Mat dx_img, dy_img, mag_img, bin_img;
-        void matlab_style_canny();
+        void calculate_canny();
         void thin_edges();
         void break_crossings();
         void straighten_edges();
