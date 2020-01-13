@@ -141,10 +141,13 @@ namespace pure {
         // TODO: move all matrices into instance to avoid reallocations
         
         // (1) Image Smoothing
-        GaussianBlur(*orig_img, img, Size(15, 15), 2, 2, BORDER_REPLICATE);
+        // NOTE: Matlab appears to be using a blur-size of 15x15. This blur-size is
+        // certainly resolution dependent. For a resolution of 320x240 we found 5x5 to
+        // perform much better.
+        GaussianBlur(*orig_img, img, Size(5, 5), 2, 2, BORDER_REPLICATE);
 
         // (2) Gradient Computation
-        // Note: although the description recommends DoG gradient computation, we found
+        // NOTE: although the description recommends DoG gradient computation, we found
         // that Sobel still works fine enough and is ready-to-use from OpenCV
         Sobel(img, dx_img, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
         Sobel(img, dy_img, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);

@@ -12,7 +12,7 @@ import time
 
 detectors = {
     # "2d": Detector2D(),
-    "pure_pfa_orig_canny": PuReDetector(),
+    "pure_pfa_matlab_canny": PuReDetector(),
     # "pure_orig": PuReOriginal(),
 }
 
@@ -20,7 +20,7 @@ for large in [False]:
     for name, detector in detectors.items():
         data = []
 
-        method = f"{name}.matlab_canny"
+        method = f"{name}.gauss5"
         if large:
             method += ".large"
 
