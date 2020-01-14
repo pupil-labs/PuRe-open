@@ -10,5 +10,6 @@
         "xmemory0": "cpp",
         "xutility": "cpp",
         "limits": "cpp"
-    }
+    },
+    "python.formatting.provider": "black"
 }
