@@ -27,34 +27,13 @@ namespace pure {
             return confidence.value < other.confidence.value;
         }
     };
-
-    
-    struct OutResult
-    {
-        float center_x = 0;
-        float center_y = 0;
-        float first_ax = 0;
-        float second_ax = 0;
-        double angle = 0;
-        double confidence = 0;
-        OutResult() = default;
-        
-        OutResult(const Result& other) :
-            center_x(other.center.x),
-            center_y(other.center.y),
-            first_ax(other.axes.width),
-            second_ax(other.axes.height),
-            angle(other.angle),
-            confidence(other.confidence.value)
-        {}
-    };
     
     typedef vector<Point> Segment;
     
     class Detector
     {
     public:
-        OutResult detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
+        Result detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
 
     private:
         Mat img;

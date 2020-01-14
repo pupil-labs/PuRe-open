@@ -11,24 +11,46 @@ cdef extern from '<opencv2/core.hpp>':
 cdef extern from '<opencv2/core.hpp>' namespace 'cv':
     cdef cppclass Mat :
         Mat() except +
-        Mat( int height, int width, int type, void* data  ) except+
-        Mat( int height, int width, int type ) except+
+        Mat(int height, int width, int type, void* data) except +
+        Mat(int height, int width, int type) except +
+
+    cdef cppclass Point_[T]:
+        Point_() except +
+        T x
+        T y
+
+    cdef cppclass Size_[T]:
+        Size_() except +
+        T width
+        T height
+    
+    ctypedef Point_[float] Point2f
+    ctypedef Size_[float] Size2f
+
+
+
+
+
 
 
 cdef extern from "pure.hpp" namespace "pure":
 
-    cdef struct OutResult:
-        float center_x
-        float center_y
-        float first_ax
-        float second_ax
+    cdef struct Confidence:
+        double value
+        double aspect_ratio
+        double angular_spread
+        double outline_contrast
+
+    cdef struct Result:
+        Point2f center
+        Size2f axes
         double angle
-        double confidence
+        Confidence confidence
     
     cdef cppclass Detector:
         Detector()
-        OutResult detect(const Mat& gray_img)
-        OutResult detect(const Mat& gray_img, Mat* debug_color_img)
+        Result detect(const Mat& gray_img)
+        Result detect(const Mat& gray_img, Mat* debug_color_img)
 
 
 
@@ -50,9 +72,21 @@ cdef class PuReDetector:
     ):
         # TODO: This returns semi-axes! The other detectors expect full-axes!
         # This needs to be adjusted before finalizing!
-        return self.c_detect(gray_img, debug_img)
+        c_result = self.c_detect(gray_img, debug_img)
 
-    cdef OutResult c_detect(
+        # convert c struct to python dict
+        result = {}
+        result["ellipse"] = {
+            "center": (c_result.center.x, c_result.center.y),
+            "axes": (2 * c_result.axes.width, 2 * c_result.axes.height),
+            "angle": c_result.angle,
+        }
+        result["diameter"] = max(result["ellipse"]["axes"])
+        result["location"] = result["ellipse"]["center"]
+        result["confidence"] = c_result.confidence.value
+        return result
+
+    cdef Result c_detect(
         self,
         gray_img: np.ndarray,
         debug_img: T.Optional[np.ndarray]=None,

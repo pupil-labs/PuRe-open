@@ -18,7 +18,7 @@ using namespace cv;
 
 namespace pure {
 
-    OutResult Detector::detect(const Mat& input_img, Mat* debug_color_img)
+    Result Detector::detect(const Mat& input_img, Mat* debug_color_img)
     {
         orig_img = &input_img;
         input_img.copyTo(img);
