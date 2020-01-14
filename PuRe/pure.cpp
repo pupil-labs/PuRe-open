@@ -20,50 +20,22 @@ namespace pure {
 
     Result Detector::detect(const Mat& input_img, Mat* debug_color_img)
     {
+        // initial setup
         orig_img = &input_img;
         debug_img = debug_color_img;
         debug = debug_img != nullptr;
 
-        {
-            constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
-            constexpr double max_pupil_diameter_ratio = 0.29;
-            const double diagonal = sqrt(input_img.cols * input_img.cols + input_img.rows * input_img.rows);
-            min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
-            max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
-        }
-
+        // appropriate pupil radius
+        constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
+        constexpr double max_pupil_diameter_ratio = 0.29;
+        const double diagonal = sqrt(input_img.cols * input_img.cols + input_img.rows * input_img.rows);
+        min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
+        max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
+        
+        // detection pipeline
         detect_edges();
         select_edge_segments();
-
-        if (debug)
-        {
-            int i = 0;
-            for (size_t segment_i = 0; segment_i < segments.size(); ++segment_i)
-            {
-                auto& segment = segments[segment_i];
-                auto& result = candidates[segment_i];
-                if (result.confidence.value == 0) continue;
-
-                auto tmp = debug_img->clone();
-
-                ellipse(tmp, Point(result.center), Size(result.axes), result.angle, 0, 360, Scalar(255, 0, 255));
-                
-                int bar_w = 20;
-                int bar_h = 50;
-                rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
-                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
-                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
-                
-                ellipse_outline_constrast(result, &tmp);
-
-                imshow(string("Segment ") + to_string(i), tmp);
-                i++;
-            }
-        }
-
         combine_segments();
-
         return select_final_segment();
     }
     
@@ -79,12 +51,6 @@ namespace pure {
         break_crossings();
         straighten_edges();
         break_orthogonals();
-
-        if (debug)
-        {
-            cvtColor(edge_img, *debug_img, cv::COLOR_GRAY2BGR);
-            *debug_img *= 0.4;
-        }
     }
 
     struct Coords
@@ -572,28 +538,9 @@ namespace pure {
         {
         	evaluate_segment(segments[segment_i], candidates[segment_i]);
         }
-
-        if (debug)
-        {
-            int n = 0;
-            for (const auto& result : candidates)
-            {
-                if (result.confidence.value != 0) n++;
-            }
-            if (n == 0)
-            {
-                auto tmp = debug_img->clone();
-                Result dummy;
-                for (const auto& segment : segments)
-                {
-                    evaluate_segment(segment, dummy, &tmp);
-                }
-                imshow("Segments", tmp);
-            }
-        }
     }
 
-    void Detector::evaluate_segment(const Segment& segment, Result& result, Mat* tmp) const
+    void Detector::evaluate_segment(const Segment& segment, Result& result) const
     {
         // 3.3.1 Filter small segments
         if (!segment_large_enough(segment))
@@ -605,10 +552,6 @@ namespace pure {
         // 3.3.2 Filter segments based on approximate diameter
         if (!segment_diameter_valid(segment))
         {
-            if (debug && tmp)
-            {
-                polylines(*tmp, segment, false, Scalar(255, 0, 0));
-            }
             result.confidence.value = 0;
             return;
         }
@@ -616,10 +559,6 @@ namespace pure {
         // 3.3.3 Filter segments based on curvature approximation
         if (!segment_curvature_valid(segment))
         {
-            if (debug && tmp)
-            {
-                polylines(*tmp, segment, false, Scalar(255, 255, 0));
-            }
             result.confidence.value = 0;
             return;
         }
@@ -627,10 +566,6 @@ namespace pure {
         // 3.3.4 Ellipse fitting
         if (!fit_ellipse(segment, result))
         {
-            if (debug && tmp)
-            {
-                polylines(*tmp, segment, false, Scalar(0, 255, 0));
-            }
             result.confidence.value = 0;
             return;
         }
@@ -638,21 +573,12 @@ namespace pure {
         // 3.3.5 Additional filter
         if (!segment_mean_in_ellipse(segment, result))
         {
-            if (debug && tmp)
-            {
-                polylines(*tmp, segment, false, Scalar(0, 255, 255));
-            }
             result.confidence.value = 0;
             return;
         }
         
         // 3.4  Calculate confidence
         result.confidence = calculate_confidence(segment, result);
-
-        if (debug && tmp && result.confidence.value == 0)
-        {
-            polylines(*tmp, segment, false, Scalar(0, 0, 255));
-        }
     }
 
     inline bool Detector::segment_large_enough(const Segment& segment) const
@@ -833,7 +759,7 @@ namespace pure {
         return spread;
     }
 
-    double Detector::ellipse_outline_constrast(const Result& result, Mat* tmp) const
+    double Detector::ellipse_outline_constrast(const Result& result) const
     {
         double contrast = 0;
         constexpr double radian_per_degree = M_PI / 180.0;
@@ -870,15 +796,13 @@ namespace pure {
                 continue;
             }
 
-            LineIterator inner_line(*orig_img, inner_pt, outline_point);
-
             double inner_avg = 0;
+            LineIterator inner_line(*orig_img, inner_pt, outline_point);
             for (int j = 0; j < inner_line.count; j++, ++inner_line)
             {
                 inner_avg += *(*inner_line);
             }
             inner_avg /= inner_line.count;
-
 
             double outer_avg = 0;
             LineIterator outer_line(*orig_img, outline_point, outer_pt);
@@ -889,15 +813,6 @@ namespace pure {
             outer_avg /= outer_line.count;
 
             if (inner_avg + bias < outer_avg) contrast += 1;
-            if (debug && tmp != nullptr)
-            {
-                line(
-                    *tmp,
-                    inner_pt,
-                    outer_pt,
-                    (inner_avg + bias < outer_avg) ? Scalar(0, 255, 0) : Scalar(0, 0, 255)
-                );
-            }
 
             theta += stride;
         }
@@ -936,26 +851,6 @@ namespace pure {
                         result2.confidence.outline_contrast
                     ); 
                     if (new_result.confidence.outline_contrast <= previous_contrast) continue;
-
-                    if (debug)
-                    {
-                        auto tmp = debug_img->clone();
-
-                        rectangle(tmp, rect1, Scalar(255, 255, 0));
-                        rectangle(tmp, rect2, Scalar(0, 255, 255));
-                        ellipse(tmp, Point(new_result.center), Size(new_result.axes), new_result.angle, 0, 360, Scalar(255, 0, 255));
-                        
-                        int bar_w = 20;
-                        int bar_h = 50;
-                        rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                        rectangle(tmp, Rect(0, 0, bar_w, new_result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
-                        rectangle(tmp, Rect(bar_w, 0, bar_w, new_result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
-                        rectangle(tmp, Rect(2*bar_w, 0, bar_w, new_result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
-
-                        ellipse_outline_constrast(new_result, &tmp);
-
-                        imshow(string("Combined ") + to_string(combined_results.size()), tmp);
-                    }
 
                     combined_segments.push_back(new_segment);
                     combined_results.push_back(new_result);
@@ -1003,23 +898,6 @@ namespace pure {
             if (norm(initial_pupil.center - result.center) > semi_major) continue;
             if (candidate && result.confidence.value <= candidate->confidence.value) continue;
             candidate = &result;
-            if (debug)
-            {
-                auto tmp = debug_img->clone();
-
-                ellipse(tmp, Point(result.center), Size(result.axes), result.angle, 0, 360, Scalar(255, 0, 255));
-                
-                int bar_w = 20;
-                int bar_h = 50;
-                rectangle(tmp, Rect(0, 0, bar_w*3, bar_h), Scalar(255, 255, 255));
-                rectangle(tmp, Rect(0, 0, bar_w, result.confidence.angular_spread * bar_h), Scalar(255, 0, 0), cv::FILLED);
-                rectangle(tmp, Rect(bar_w, 0, bar_w, result.confidence.aspect_ratio * bar_h), Scalar(0, 255, 0), cv::FILLED);
-                rectangle(tmp, Rect(2*bar_w, 0, bar_w, result.confidence.outline_contrast * bar_h), Scalar(0, 0, 255), cv::FILLED);
-                
-                ellipse_outline_constrast(result, &tmp);
-
-                imshow(string("Final ") + to_string(i), tmp);
-            }
         }
         return (candidate) ? *candidate : initial_pupil;
     }

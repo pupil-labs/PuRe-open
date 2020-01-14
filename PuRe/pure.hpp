@@ -40,7 +40,7 @@ namespace pure {
         // Note: the pointers are not owned, but just cached here.
         const Mat* orig_img;
         Mat* debug_img;
-        bool debug = true;
+        bool debug = false;
 
     private:
         // 3.2. Edge Detection and Morphological Manipulation
@@ -59,7 +59,7 @@ namespace pure {
         double min_pupil_diameter, max_pupil_diameter;
         void select_edge_segments();
 
-        void evaluate_segment(const Segment& segment, Result& result, Mat* tmp=nullptr) const;
+        void evaluate_segment(const Segment& segment, Result& result) const;
         bool segment_large_enough(const Segment& segment) const;
         bool segment_diameter_valid(const Segment& segment) const;
         bool segment_curvature_valid(const Segment& segment) const;
@@ -69,7 +69,7 @@ namespace pure {
 
         Confidence calculate_confidence(const Segment& segment, const Result& result) const;
         double angular_edge_spread(const Segment& segment, const Result& result) const;
-        double ellipse_outline_constrast(const Result& result, Mat* tmp=nullptr) const;
+        double ellipse_outline_constrast(const Result& result) const;
 
     private:
         // 3.5. Conditional Segment Combination
