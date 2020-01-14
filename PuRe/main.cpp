@@ -59,8 +59,8 @@ int main()
 			
 			
 
-			ellipse(color, Point((int)result.center_x, (int)result.center_y), Size((int)result.first_ax, (int)result.second_ax), result.angle, 0, 360, Scalar(0, 0, 255));
-			circle(color, Point((int)result.center_x, (int)result.center_y), 2, Scalar(0, 0, 255), 2);
+			ellipse(color, Point(result.center), Size(result.axes), result.angle, 0, 360, Scalar(0, 0, 255));
+			circle(color, Point(result.center), 2, Scalar(0, 0, 255), 2);
 			imshow("Color", color);
 
 			// putText(debug, to_string(n), Point(0, 240), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255, 255, 255));
