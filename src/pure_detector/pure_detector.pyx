@@ -20,7 +20,6 @@ cdef extern from "pure.hpp" namespace "pure":
     cdef struct Parameters:
         double min_pupil_diameter_ratio
         double max_pupil_diameter_ratio
-        double axes_ratio_threshold
 
     cdef struct OutResult:
         float center_x

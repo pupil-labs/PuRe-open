@@ -696,10 +696,10 @@ namespace pure {
 
     inline bool Detector::axes_ratio_is_invalid(double ratio) const
     {
-        return (
-            ratio < params.axes_ratio_threshold ||
-            ratio > 1 && (1.0 / ratio) < params.axes_ratio_threshold
-        );
+        constexpr double axes_ratio_threshold = 0.2;
+        constexpr double inverse_threshold = 1.0 / axes_ratio_threshold;
+        
+        return ratio < axes_ratio_threshold || ratio > inverse_threshold;
     }
 
     bool Detector::fit_ellipse(const Segment& segment, Result& result) const
