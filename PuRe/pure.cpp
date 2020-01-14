@@ -21,7 +21,6 @@ namespace pure {
     Result Detector::detect(const Mat& input_img, Mat* debug_color_img)
     {
         orig_img = &input_img;
-        input_img.copyTo(img);
         debug_img = debug_color_img;
         debug = debug_img != nullptr;
 
@@ -33,7 +32,6 @@ namespace pure {
             max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
         }
 
-        preprocess();
         detect_edges();
         select_edge_segments();
 
@@ -68,17 +66,13 @@ namespace pure {
 
         return select_final_segment();
     }
-
-    void Detector::preprocess()
-    {
-        // NOTE: we assume the resizing to take place outside, which makes it easier for
-        // users to create the debug and output images
-        normalize(img, img, 0, 255, NORM_MINMAX);
-    }
-
     
     void Detector::detect_edges()
     {   
+        // NOTE: we assume the resizing to take place outside, which makes it easier for
+        // users to create the debug and output images
+        normalize(*orig_img, edge_img, 0, 255, NORM_MINMAX);
+
         calculate_canny();
 
         thin_edges();
@@ -88,7 +82,7 @@ namespace pure {
 
         if (debug)
         {
-            cvtColor(img, *debug_img, cv::COLOR_GRAY2BGR);
+            cvtColor(edge_img, *debug_img, cv::COLOR_GRAY2BGR);
             *debug_img *= 0.4;
         }
     }
@@ -112,13 +106,13 @@ namespace pure {
         // NOTE: Matlab appears to be using a blur-size of 15x15. This blur-size is
         // certainly resolution dependent. For a resolution of 320x240 we found 5x5 to
         // perform much better.
-        GaussianBlur(*orig_img, img, Size(5, 5), 2, 2, BORDER_REPLICATE);
+        GaussianBlur(*orig_img, edge_img, Size(5, 5), 2, 2, BORDER_REPLICATE);
 
         // (2) Gradient Computation
         // NOTE: although the description recommends DoG gradient computation, we found
         // that Sobel still works fine enough and is ready-to-use from OpenCV
-        Sobel(img, dx_img, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
-        Sobel(img, dy_img, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
+        Sobel(edge_img, dx_img, CV_32F, 1, 0, 7, 1, 0, BORDER_REPLICATE);
+        Sobel(edge_img, dy_img, CV_32F, 0, 1, 7, 1, 0, BORDER_REPLICATE);
         magnitude(dx_img, dy_img, mag_img);
 
         constexpr uchar NO_EDGE = 0;
@@ -130,7 +124,7 @@ namespace pure {
             // Idea: Look at the gradient direction at every edge pixel. Compare the
             // magnitude with both neighbors along the gradient direction. Set to
             // NO_EDGE, if pixel does not have maximum magnitude.
-            img.setTo(POTENTIAL_EDGE);
+            edge_img.setTo(POTENTIAL_EDGE);
 
             // Constants for direction comparison
             constexpr float tan_pi_8 = 0.4142135623f;  // tan(PI/8)
@@ -143,7 +137,7 @@ namespace pure {
             int r, c;
             for (r = 1; r < rows; ++r)
             {
-                out_row = img.ptr(r);
+                out_row = edge_img.ptr(r);
                 mag_above = mag_img.ptr<float>(r - 1);
                 mag_current = mag_img.ptr<float>(r);
                 mag_below = mag_img.ptr<float>(r + 1);
@@ -252,12 +246,12 @@ namespace pure {
             queue<Coords> growing_edges;
             const uchar* bin_row;
             uchar* out_row;
-            int rows = img.rows - 1;
-            int cols = img.cols - 1;
+            int rows = edge_img.rows - 1;
+            int cols = edge_img.cols - 1;
             for (int r = 1; r < rows; ++r)
             {
                 bin_row = bin_img.ptr(r);
-                out_row = img.ptr(r);
+                out_row = edge_img.ptr(r);
                 for (int c = 1; c < cols; ++c)
                 {
                     if (out_row[c] != POTENTIAL_EDGE)
@@ -298,8 +292,8 @@ namespace pure {
                             {
                                 const int r2 = candidate.r + dr;
                                 const int c2 = candidate.c + dc;
-                                if (img.ptr(r2)[c2] != POTENTIAL_EDGE) continue;
-                                img.ptr(r2)[c2] = EDGE;
+                                if (edge_img.ptr(r2)[c2] != POTENTIAL_EDGE) continue;
+                                edge_img.ptr(r2)[c2] = EDGE;
                                 growing_edges.emplace(r2, c2);
                             }
                         }
@@ -307,7 +301,7 @@ namespace pure {
                 }
             }
             // Threshold away potential edges that are left
-            threshold(img, img, POTENTIAL_EDGE + 1, EDGE, CV_8U);
+            threshold(edge_img, edge_img, POTENTIAL_EDGE + 1, EDGE, CV_8U);
         }
     }
 
@@ -333,14 +327,14 @@ namespace pure {
 
         const uchar *above, *below;
         uchar *current;
-        const int rows = img.rows - 2;
-        const int cols = img.cols - 2;
+        const int rows = edge_img.rows - 2;
+        const int cols = edge_img.cols - 2;
         int r, c;
         for (r = 0; r < rows; ++r)
         {
-            above = img.ptr(r);
-            current = img.ptr(r + 1);
-            below = img.ptr(r + 2);
+            above = edge_img.ptr(r);
+            current = edge_img.ptr(r + 1);
+            below = edge_img.ptr(r + 2);
             for (c = 0; c < cols; ++c)
             {
                 if (above[c + 1] && current[c] ||
@@ -362,15 +356,15 @@ namespace pure {
         // As described in in the ElSe paper (Fuhl et al. 2016)
 
         const uchar *above, *below;
-        const int rows = img.rows - 2;
-        const int cols = img.cols - 2;
+        const int rows = edge_img.rows - 2;
+        const int cols = edge_img.cols - 2;
         uchar *current;
         int r, c;
         for (r = 0; r < rows; ++r)
         {
-            above = img.ptr(r);
-            current = img.ptr(r + 1);
-            below = img.ptr(r + 2);
+            above = edge_img.ptr(r);
+            current = edge_img.ptr(r + 1);
+            below = edge_img.ptr(r + 2);
             for (c = 0; c < cols; ++c)
             {
                 int neighbors = 0;
@@ -401,15 +395,15 @@ namespace pure {
         // I implemented then basically in the order of presentation in the paper.
 
         uchar *row0, *row1, *row2, *row3;
-        const int rows = img.rows - 3;
-        const int cols = img.cols - 3;
+        const int rows = edge_img.rows - 3;
+        const int cols = edge_img.cols - 3;
         int r, c;
         for (r = 0; r < rows; ++r)
         {
-            row0 = img.ptr(r);
-            row1 = img.ptr(r + 1);
-            row2 = img.ptr(r + 2);
-            row3 = img.ptr(r + 3);
+            row0 = edge_img.ptr(r);
+            row1 = edge_img.ptr(r + 1);
+            row2 = edge_img.ptr(r + 2);
+            row3 = edge_img.ptr(r + 3);
             for (c = 0; c < cols; ++c)
             {
                 if (row1[c] && row0[c + 1] && row1[c + 2])
@@ -493,17 +487,17 @@ namespace pure {
 
         uchar *row0, *row1, *row2, *row3;
         const uchar *row4, *row5;
-        const int rows = img.rows - 5;
-        const int cols = img.cols - 5;
+        const int rows = edge_img.rows - 5;
+        const int cols = edge_img.cols - 5;
         int r, c;
         for (r = 0; r < rows; ++r)
         {
-            row0 = img.ptr(r);
-            row1 = img.ptr(r + 1);
-            row2 = img.ptr(r + 2);
-            row3 = img.ptr(r + 3);
-            row4 = img.ptr(r + 4);
-            row5 = img.ptr(r + 5);
+            row0 = edge_img.ptr(r);
+            row1 = edge_img.ptr(r + 1);
+            row2 = edge_img.ptr(r + 2);
+            row3 = edge_img.ptr(r + 3);
+            row4 = edge_img.ptr(r + 4);
+            row5 = edge_img.ptr(r + 5);
             for (c = 0; c < cols; ++c)
             {
                 // Every pattern affects only 1 pixel. Here the patterns are grouped by the
@@ -567,7 +561,7 @@ namespace pure {
 
     void Detector::select_edge_segments()
     {
-        findContours(img, segments, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
+        findContours(edge_img, segments, RETR_LIST, CHAIN_APPROX_TC89_KCOS);
 
         // NOTE: We are essentially re-using the result from previous runs. Need to make
         // sure that either all values will be overwritten or confidence will be set to
@@ -711,7 +705,7 @@ namespace pure {
         auto fit = fitEllipse(segment);
 
         // 	(I) discard if center outside image boundaries
-        if (fit.center.x < 0 || fit.center.y < 0 || fit.center.x > img.cols || fit.center.y > img.rows)
+        if (fit.center.x < 0 || fit.center.y < 0 || fit.center.x > edge_img.cols || fit.center.y > edge_img.rows)
         {
             return false;
         }

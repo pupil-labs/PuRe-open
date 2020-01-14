@@ -36,15 +36,11 @@ namespace pure {
         Result detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
 
     private:
-        Mat img;
+        Mat edge_img;
         // Note: the pointers are not owned, but just cached here.
         const Mat* orig_img;
         Mat* debug_img;
         bool debug = true;
-
-    private:
-        // 3.1. Preprocessing
-        void preprocess();
 
     private:
         // 3.2. Edge Detection and Morphological Manipulation
