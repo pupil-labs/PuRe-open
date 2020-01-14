@@ -9,12 +9,6 @@ using namespace std;
 using namespace cv;
 
 namespace pure {
-
-    struct Parameters {
-        double min_pupil_diameter_ratio = 0.07 * 2/3;
-        double max_pupil_diameter_ratio = 0.29;
-    };
-
     struct Confidence
     {
         double value = 0;
@@ -60,10 +54,6 @@ namespace pure {
     class Detector
     {
     public:
-        Parameters params;
-    public:
-        Detector() = default;
-        Detector(Parameters params) : params(params) {}
         OutResult detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
 
     private:
@@ -91,7 +81,7 @@ namespace pure {
         // 3.3. Edge Segment Selection and 3.4. Confidence Measure
         vector<Segment> segments;
         vector<Result> candidates;
-        double MIN_PUPIL_DIAMETER, MAX_PUPIL_DIAMETER;
+        double min_pupil_diameter, max_pupil_diameter;
         void select_edge_segments();
 
         void evaluate_segment(const Segment& segment, Result& result, Mat* tmp=nullptr) const;

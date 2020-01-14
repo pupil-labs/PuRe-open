@@ -25,6 +25,14 @@ namespace pure {
         debug_img = debug_color_img;
         debug = debug_img != nullptr;
 
+        {
+            constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
+            constexpr double max_pupil_diameter_ratio = 0.29;
+            const double diagonal = sqrt(input_img.cols * input_img.cols + input_img.rows * input_img.rows);
+            min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
+            max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
+        }
+
         preprocess();
         detect_edges();
         select_edge_segments();
@@ -566,12 +574,6 @@ namespace pure {
         // 0 for every result!
         candidates.resize(segments.size());
 
-        const int W = img.cols;
-        const int H = img.rows;
-        const double diagonal = sqrt(W * W + H * H);
-        MIN_PUPIL_DIAMETER = params.min_pupil_diameter_ratio * diagonal;
-        MAX_PUPIL_DIAMETER = params.max_pupil_diameter_ratio * diagonal;
-
         for (size_t segment_i = 0; segment_i < segments.size(); ++segment_i)
         {
         	evaluate_segment(segments[segment_i], candidates[segment_i]);
@@ -674,18 +676,18 @@ namespace pure {
             {
                 approx_diameter = max(approx_diameter, norm(*p1 - *p2));
                 // we can early exit, because we will only get bigger
-                if (approx_diameter > MAX_PUPIL_DIAMETER)
+                if (approx_diameter > max_pupil_diameter)
                 {
                     break;
                 }
             }
             // we can early exit, because we will only get bigger
-            if (approx_diameter > MAX_PUPIL_DIAMETER)
+            if (approx_diameter > max_pupil_diameter)
             {
                 break;
             }
         }
-        return MIN_PUPIL_DIAMETER < approx_diameter && approx_diameter < MAX_PUPIL_DIAMETER;
+        return min_pupil_diameter < approx_diameter && approx_diameter < max_pupil_diameter;
     }
     bool Detector::segment_curvature_valid(const Segment& segment) const
     {

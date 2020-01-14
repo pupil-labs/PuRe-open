@@ -17,10 +17,6 @@ cdef extern from '<opencv2/core.hpp>' namespace 'cv':
 
 cdef extern from "pure.hpp" namespace "pure":
 
-    cdef struct Parameters:
-        double min_pupil_diameter_ratio
-        double max_pupil_diameter_ratio
-
     cdef struct OutResult:
         float center_x
         float center_y
@@ -30,9 +26,7 @@ cdef extern from "pure.hpp" namespace "pure":
         double confidence
     
     cdef cppclass Detector:
-        Parameters params
         Detector()
-        Detector(Parameters params)
         OutResult detect(const Mat& gray_img)
         OutResult detect(const Mat& gray_img, Mat* debug_color_img)
 
