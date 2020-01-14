@@ -18,8 +18,6 @@ cdef extern from '<opencv2/core.hpp>' namespace 'cv':
 cdef extern from "pure.hpp" namespace "pure":
 
     cdef struct Parameters:
-        double canny_lower_threshold
-        double canny_upper_threshold
         double min_pupil_diameter_ratio
         double max_pupil_diameter_ratio
         double axes_ratio_threshold

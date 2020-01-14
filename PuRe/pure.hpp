@@ -11,8 +11,6 @@ using namespace cv;
 namespace pure {
 
     struct Parameters {
-        double canny_lower_threshold = 100;
-        double canny_upper_threshold = 200;
         double min_pupil_diameter_ratio = 0.07 * 2/3;
         double max_pupil_diameter_ratio = 0.29;
         double axes_ratio_threshold = 0.2;
