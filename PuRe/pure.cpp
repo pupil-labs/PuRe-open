@@ -36,7 +36,56 @@ namespace pure {
         detect_edges();
         select_edge_segments();
         combine_segments();
-        return select_final_segment();
+
+        if (debug)
+        {
+            for (int i = 0; i < segments.size(); ++i)
+            {
+                const auto& segment = segments[i];
+                const auto& result = candidates[i];
+                const double c = result.confidence.value;
+                if (c == 0) continue;
+                const Scalar color(0, 255 * min(1.0, 2.0 * c), 255 * min(1.0, 2.0 * (1 - c)));
+                
+                Mat blend = debug_img->clone();
+                ellipse(
+                    blend,
+                    Point(result.center),
+                    Size(result.axes),
+                    result.angle,
+                    0, 360,
+                    color,
+                    FILLED
+                );
+                *debug_img = 0.9 * *debug_img + 0.1 * blend;
+                polylines(*debug_img, segment, false, 0.8 * color);
+
+            }
+        }
+
+        Result final = select_final_segment();
+
+        if (debug)
+        {
+            Point center(orig_img->cols / 2, orig_img->rows / 2);
+            Size size(orig_img->cols, orig_img->rows);
+
+            const Scalar white(255, 255, 255);
+            const Scalar black(0, 0, 0);
+            const Scalar blue(255, 150, 0);
+
+            Mat mask = Mat::zeros(size, CV_8UC3);
+            circle(mask, center, max_pupil_diameter / 2, white, FILLED);
+            circle(mask, center, min_pupil_diameter / 2, black, FILLED);
+            Mat colored(size, CV_8UC3, blue);
+            colored = min(mask, colored);
+
+            *debug_img = *debug_img * 0.9 + colored * 0.1;
+            circle(*debug_img, center, max_pupil_diameter / 2, blue);
+            circle(*debug_img, center, min_pupil_diameter / 2, blue);
+        }
+
+        return final;
     }
     
     void Detector::detect_edges()
@@ -44,6 +93,11 @@ namespace pure {
         // NOTE: we assume the resizing to take place outside, which makes it easier for
         // users to create the debug and output images
         normalize(*orig_img, edge_img, 0, 255, NORM_MINMAX);
+        if (debug)
+        {
+            cvtColor(edge_img, *debug_img, COLOR_GRAY2BGR);
+            *debug_img *= 0.3;
+        }
 
         calculate_canny();
 
