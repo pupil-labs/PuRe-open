@@ -301,7 +301,7 @@ namespace pure {
                         Coords candidate = growing_edges.front();
                         growing_edges.pop();
 
-                        if (candidate.r < 1 || candidate.r > rows || candidate.c < 1 || candidate.c > cols)
+                        if (candidate.r < 1 || candidate.r > rows - 1 || candidate.c < 1 || candidate.c > cols - 1)
                         {
                             continue;
                         }
