@@ -1,0 +1,15 @@
+TODO:
+- Structure cpp: where to put main? Example?
+- Cleanup cpp: CMakeLists.txt
+    - Find good solution for OpenCV. Needs customizability for python setup!
+    - Test on MSVC
+- Cleanup setup.py with opencv
+- Cleanup benchmarking
+- Cleanup rest of repo
+- Documentation of Python lib
+- Documentation of c++ Example
+- Clarify lib name
+- License headers
+- PyPI
+
+DONE:
