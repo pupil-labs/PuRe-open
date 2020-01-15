@@ -128,17 +128,7 @@ extensions = [
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
-    ),
-    Extension(
-        name="pure_detector.ellipse_utils",
-        sources=[
-            f"{package_dir}/pure_detector/ellipse_utils.pyx",
-            "PuRe/utils.cpp"
-        ],
-        language="c++",
-        extra_compile_args=extra_compile_args,
-        include_dirs=include_dirs,
-    ),
+    )
 ]
 ########################################################################################
 # Setup Script
