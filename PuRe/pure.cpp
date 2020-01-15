@@ -39,7 +39,7 @@ namespace pure {
 
         if (debug)
         {
-            for (int i = 0; i < segments.size(); ++i)
+            for (size_t i = 0; i < segments.size(); ++i)
             {
                 const auto& segment = segments[i];
                 const auto& result = candidates[i];
@@ -357,10 +357,12 @@ namespace pure {
             below = edge_img.ptr(r + 2);
             for (c = 0; c < cols; ++c)
             {
-                if (above[c + 1] && current[c] ||
-                    above[c + 1] && current[c + 2] ||
-                    below[c + 1] && current[c] ||
-                    below[c + 1] && current[c + 2])
+                if (
+                    (above[c + 1] && current[c])        ||
+                    (above[c + 1] && current[c + 2])    ||
+                    (below[c + 1] && current[c])        ||
+                    (below[c + 1] && current[c + 2])
+                )
                 {
                     current[c + 1] = 0;
                 }
@@ -542,8 +544,8 @@ namespace pure {
                 // +----+----+----+----+
                 
                 if (row0[c + 1] && (
-                    row0[c] && row1[c + 2] && row2[c +2] || // d1
-                    row0[c + 2] && row1[c] && row2[c] // d3
+                    (row0[c] && row1[c + 2] && row2[c +2]) || // d1
+                    (row0[c + 2] && row1[c] && row2[c]) // d3
                 )) row0[c + 1] = 0;
 
                 if (row0[c + 2] && row1[c + 1] && row1[c + 3] && row2[c] && row2[c + 4]) row0[c + 2] = 0; // f1
@@ -555,19 +557,19 @@ namespace pure {
                 if (row1[c + 3] && row0[c] && row0[c + 1] && row0[c + 2] && row2[c + 4] && row3[c + 4] && row4[c + 4]) row1[c + 3] = 0; //e1
 
                 if (row2[c] && row1[c + 1] && row0[c + 2] && (
-                    row3[c + 1] && row4[c + 2] || // f2
-                    row3[c] && row4[c + 1] && row5[c + 2] // g2
+                    (row3[c + 1] && row4[c + 2]) || // f2
+                    (row3[c] && row4[c + 1] && row5[c + 2]) // g2
                 )) row2[c] = 0;
 
                 if (row2[c + 1] && (
-                    row0[c] && row1[c] && row2[c + 2] || // d2
-                    row0[c + 2] && row1[c + 2] && row2[c] // d4
+                    (row0[c] && row1[c] && row2[c + 2]) || // d2
+                    (row0[c + 2] && row1[c + 2] && row2[c]) // d4
                 )) row2[c + 1] = 0;
 
                 if (row2[c + 2] && row0[c] && row1[c + 1] && (
-                    row3[c + 1] && row4[c] || // f3
-                    row1[c + 3] && row0[c + 4] || // f4
-                    row2[c + 3] && row1[c + 4] && row0[c + 5] // g4
+                    (row3[c + 1] && row4[c]) || // f3
+                    (row1[c + 3] && row0[c + 4]) || // f4
+                    (row2[c + 3] && row1[c + 4] && row0[c + 5]) // g4
                 )) row2[c + 2] = 0;
 
                 if (row3[c + 1] && row0[c] && row1[c] && row2[c] && row4[c + 2] && row4[c + 3] && row4[c + 4]) row3[c + 1] = 0; //e2
@@ -732,13 +734,13 @@ namespace pure {
         // See the following rhombus for reference. Note that we only need
         // to test for Q1, since the we can center at (0,0) and the rest is
         // symmetry. (not in image coordinates, but y-up)
-        //   /|\
-        //  / | \ Q1
-        // /  |  \
-        //---------
-        // \  |  /
-        //  \ | /
-        //   \|/
+        //    /|\      |
+        //   / | \  Q1 |
+        //  /  |  \    |
+        // ---------
+        //  \  |  /
+        //   \ | /
+        //    \|/
 
         // Shift rotation to origin to center at (0,0).
         segment_mean -= result.center; 
@@ -824,7 +826,6 @@ namespace pure {
         // in 37 iterations because of rounding errors. This will result
         // in one line being counted twice.
         constexpr int n_iterations = 36;
-        constexpr int NEIGHBORHOOD_4 = 4;
         const double minor = min(result.axes.width, result.axes.height);
         const double cos_angle = cos(result.angle * radian_per_degree);
         const double sin_angle = sin(result.angle * radian_per_degree);
@@ -943,7 +944,6 @@ namespace pure {
         Result initial_pupil = *std::max_element(candidates.begin(), candidates.end());
         double semi_major = max(initial_pupil.axes.width, initial_pupil.axes.height);
         Result *candidate = nullptr;
-        int i = 0;
         for (auto& result : candidates)
         {
             if (result.confidence.value == 0) continue;

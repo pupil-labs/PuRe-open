@@ -44,15 +44,14 @@ elseif(CMAKE_COMPILER_IS_GNUCXX)
 
 	message(STATUS "Detected g++ compiler: ${CMAKE_CXX_COMPILER}")
 
-
 	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 	# Compiler flags for GCC
-	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall") 		# enable warnings
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")			# best optimization for runtime speed
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")	# compile with c++17 support
+	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")   		# debug: no optimization
 
 	message(STATUS "CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
