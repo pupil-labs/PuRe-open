@@ -1,8 +1,6 @@
 
 import cv2
 
-import imageio
-
 from pathlib import Path
 import os
 import csv

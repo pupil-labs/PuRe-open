@@ -1,6 +1,6 @@
 from pupil_detectors import Detector2D
 from pure_detector import PuReDetector
-from pure_original import PuReOriginal
+# from pure_original import PuReOriginal
 
 import eye_seg
 
@@ -10,12 +10,12 @@ import numpy as np
 import time
 
 import LPW
-LPW.LPW_path = "/media/pfa/P L/pfa/datasets/LPW"
+# LPW.LPW_path = "/media/pfa/P L/pfa/datasets/LPW"
 
 detectors = {
     "2d": Detector2D(),
     "pure_pfa": PuReDetector(),
-    "pure_orig": PuReOriginal(),
+    # "pure_orig": PuReOriginal(),
 }
 
 
