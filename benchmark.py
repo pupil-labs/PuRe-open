@@ -18,42 +18,47 @@ detectors = {
     "pure_orig": PuReOriginal(),
 }
 
+
 for name, detector in detectors.items():
-    data = []
+    for small in [True, False]:
 
-    method = f"{name}"
+        data = []
 
-    for subject, video_id, n, target, frame in LPW.video_iterator():
-        if n % 100 == 0:
-            print(name, subject, video_id, n)
+        method = f"{'small' if small else 'orig'}.{name}"
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        for subject, video_id, n, target, frame in LPW.video_iterator():
+            if n % 100 == 0:
+                print(name, subject, video_id, n)
 
-        t1 = time.perf_counter()
-        result = detector.detect(gray)
-        t2 = time.perf_counter()
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if small:
+                gray = cv2.resize(gray, (320, 240), interpolation=cv2.INTER_AREA)
 
-        entry = {
-            "subject": subject,
-            "video_id": video_id,
-            "frame": n,
-            "time": t2 - t1,
-            "method": method,
-            "target": target,
-            "confidence": result["confidence"],
-        }
+            t1 = time.perf_counter()
+            result = detector.detect(gray)
+            t2 = time.perf_counter()
 
-        if name != "pure_orig":
-            entry["center"] = np.array(result["ellipse"]["center"])
-            entry["axes"] = np.array(result["ellipse"]["axes"])
-            entry["angle"] = result["ellipse"]["angle"]
-        else:
-            entry["center"] = np.array((result["center_x"], result["center_y"]))
-            entry["axes"] = np.array((result["first_ax"], result["second_ax"]))
-            entry["angle"] = result["angle"]
+            entry = {
+                "subject": subject,
+                "video_id": video_id,
+                "frame": n,
+                "time": t2 - t1,
+                "method": method,
+                "target": target,
+                "confidence": result["confidence"],
+            }
 
-        data.append(entry)
+            if name != "pure_orig":
+                entry["center"] = np.array(result["ellipse"]["center"])
+                entry["axes"] = np.array(result["ellipse"]["axes"])
+                entry["angle"] = result["ellipse"]["angle"]
+            else:
+                entry["center"] = np.array((result["center_x"], result["center_y"]))
+                entry["axes"] = np.array((result["first_ax"], result["second_ax"]))
+                entry["angle"] = result["angle"]
 
-    df = pd.DataFrame(data)
-    df.to_pickle(f"benchmark.lpw.{method}.pkl")
+            data.append(entry)
+
+        df = pd.DataFrame(data)
+        df.to_pickle(f"benchmark.lpw.{method}.pkl")
 
