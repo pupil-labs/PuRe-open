@@ -1,7 +1,9 @@
 import typing as T
 
 import numpy as np
+cimport numpy as np
 
+import cv2
 
 cdef extern from '<opencv2/core.hpp>':
   int CV_8UC1
@@ -13,6 +15,7 @@ cdef extern from '<opencv2/core.hpp>' namespace 'cv':
         Mat() except +
         Mat(int height, int width, int type, void* data) except +
         Mat(int height, int width, int type) except +
+        unsigned char* data
 
     cdef cppclass Point_[T]:
         Point_() except +
@@ -65,14 +68,37 @@ cdef class PuReDetector:
     def __dealloc__(self):
         del self.c_detector_ptr
 
-    def detect(
-        self,
-        gray_img: np.ndarray,
-        debug_img: T.Optional[np.ndarray]=None,
-    ):
-        # TODO: This returns semi-axes! The other detectors expect full-axes!
-        # This needs to be adjusted before finalizing!
-        c_result = self.c_detect(gray_img, debug_img)
+    def detect(self, gray_img: np.ndarray) -> T.Dict[str, T.Any]:
+        result, _ = self.c_detect(gray_img, debug=False)
+        return result
+
+    def detect_debug(self, gray_img: np.ndarray) -> T.Tuple[T.Dict[str, T.Any], np.ndarray]:
+        result, debug_img = self.c_detect(gray_img, debug=True)
+        return result, debug_img
+
+    cdef tuple c_detect(self, gray_img: np.ndarray, debug: bool=False):
+        # NOTE: tuple unpacking does not work with cimport numpy
+        image_height, image_width = (gray_img.shape[0], gray_img.shape[1])
+
+        # cython memory views for accessing the raw data (does not copy)
+        # NOTE: [:, ::1] marks the view as c-contiguous
+        cdef unsigned char[:, ::1] gray_img_data = gray_img
+        cdef unsigned char[:, :, ::1] debug_img_data
+
+        cdef Mat gray_mat = Mat(image_height, image_width, CV_8UC1, <void *> &gray_img_data[0, 0])
+        cdef Mat debug_mat
+
+        debug_img = None
+
+        if debug:
+            debug_mat = Mat()
+            c_result = self.c_detector_ptr.detect(gray_mat, &debug_mat)
+            debug_img = np.empty((image_height, image_width, 3), dtype=np.uint8)
+            # debug_img_data = <unsigned char[:image_width, :image_height, :3]>debug_mat.data
+            debug_img[...] = <unsigned char[:image_height, :image_width, :3]>debug_mat.data
+
+        else:
+            c_result = self.c_detector_ptr.detect(gray_mat, NULL)
 
         # convert c struct to python dict
         result = {}
@@ -84,28 +110,5 @@ cdef class PuReDetector:
         result["diameter"] = max(result["ellipse"]["axes"])
         result["location"] = result["ellipse"]["center"]
         result["confidence"] = c_result.confidence.value
-        return result
-
-    cdef Result c_detect(
-        self,
-        gray_img: np.ndarray,
-        debug_img: T.Optional[np.ndarray]=None,
-    ):
-        image_height, image_width = gray_img.shape
-
-        # cython memory views for accessing the raw data (does not copy)
-        # NOTE: [:, ::1] marks the view as c-contiguous
-        cdef unsigned char[:, ::1] gray_img_data = gray_img
-        cdef unsigned char[:, :, ::1] debug_img_data
-
-        cdef Mat gray_mat = Mat(image_height, image_width, CV_8UC1, <void *> &gray_img_data[0, 0])
-        cdef Mat debug_mat
-
-        if debug_img is not None:
-            debug_img_data = debug_img
-            debug_mat = Mat(image_height, image_width, CV_8UC3, <void *> &debug_img_data[0, 0, 0])
-            result = self.c_detector_ptr.detect(gray_mat, &debug_mat)
-        else:
-            result = self.c_detector_ptr.detect(gray_mat, NULL)
-
-        return result
+        
+        return result, debug_img

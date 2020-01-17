@@ -20,25 +20,39 @@ namespace pure {
 
     Result Detector::detect(const Mat& input_img, Mat* debug_color_img)
     {
-        // initial setup
-        orig_img = &input_img;
-        debug_img = debug_color_img;
-        debug = debug_img != nullptr;
+        // setup debugging
+        debug = debug_color_img != nullptr;
+        // NOTE: when debugging, the debug_color_img pointer will get filled in the end.
+        // The intermediate debug image will potentially be downscaled in order to match
+        // the working image. It will be upscaled to input image size in the end.
 
-        // appropriate pupil radius
-        constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
-        constexpr double max_pupil_diameter_ratio = 0.29;
-        const double diagonal = sqrt(input_img.cols * input_img.cols + input_img.rows * input_img.rows);
-        min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
-        max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
+        // preprocessing
+        preprocess(input_img);
+
+        if (debug)
+        {
+            // init debug view with preprocessed image
+            cvtColor(orig_img, debug_img, COLOR_GRAY2BGR);
+            debug_img *= 0.4;
+        }
         
-        // detection pipeline
         detect_edges();
+
+        if (debug)
+        {
+            // draw edges onto debug view
+            Mat edge_color;
+            cvtColor(edge_img, edge_color, COLOR_GRAY2BGR);
+            debug_img = max(debug_img, 0.5 * edge_color);
+        }
+
         select_edge_segments();
         combine_segments();
 
         if (debug)
         {
+            // Draw all non-zero-confidence segments onto debug view with color coding
+            // for confidence. Red: confidence == 0, green: confidence == 1 
             for (size_t i = 0; i < segments.size(); ++i)
             {
                 const auto& segment = segments[i];
@@ -47,7 +61,7 @@ namespace pure {
                 if (c == 0) continue;
                 const Scalar color(0, 255 * min(1.0, 2.0 * c), 255 * min(1.0, 2.0 * (1 - c)));
                 
-                Mat blend = debug_img->clone();
+                Mat blend = debug_img.clone();
                 ellipse(
                     blend,
                     Point(result.center),
@@ -57,50 +71,86 @@ namespace pure {
                     color,
                     FILLED
                 );
-                *debug_img = 0.9 * *debug_img + 0.1 * blend;
-                polylines(*debug_img, segment, false, 0.8 * color);
-
+                debug_img = 0.9 * debug_img + 0.1 * blend;
+                polylines(debug_img, segment, false, 0.8 * color);
             }
-        }
 
-        Result final = select_final_segment();
-
-        if (debug)
-        {
-            Point center(orig_img->cols / 2, orig_img->rows / 2);
-            Size size(orig_img->cols, orig_img->rows);
-
+            // Draw ellipse min/max indicators onto debug view.
+            Point center(orig_img.cols / 2, orig_img.rows / 2);
+            Size size(orig_img.cols, orig_img.rows);
             const Scalar white(255, 255, 255);
             const Scalar black(0, 0, 0);
             const Scalar blue(255, 150, 0);
-
             Mat mask = Mat::zeros(size, CV_8UC3);
             circle(mask, center, max_pupil_diameter / 2, white, FILLED);
             circle(mask, center, min_pupil_diameter / 2, black, FILLED);
             Mat colored(size, CV_8UC3, blue);
             colored = min(mask, colored);
+            debug_img = debug_img * 0.9 + colored * 0.1;
+            circle(debug_img, center, max_pupil_diameter / 2, blue);
+            circle(debug_img, center, min_pupil_diameter / 2, blue);
 
-            *debug_img = *debug_img * 0.9 + colored * 0.1;
-            circle(*debug_img, center, max_pupil_diameter / 2, blue);
-            circle(*debug_img, center, min_pupil_diameter / 2, blue);
+            // Return the debug image. Make sure to enlarge if needed.
+            if (scaling_factor != 0.0)
+            {
+                Size input_size(input_img.cols, input_img.rows);
+                // OpenCV docs recommend INTER_CUBIC interpolation for enlarging images
+                resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, CV_INTER_CUBIC);
+            }
+            else
+            {
+                *debug_color_img = debug_img;
+            }
         }
 
-        return final;
+        Result final_segment = select_final_segment();
+
+        // Postprocessing:
+        // If we shrank the image, we need to enlarge the result.
+        if (scaling_factor != 0.0)
+        {
+            const float inverse_factor = 1.0 / scaling_factor;
+            final_segment.axes *= inverse_factor;
+            final_segment.center *= inverse_factor;
+        }
+
+        return final_segment;
+    }
+
+    void Detector::preprocess(const Mat& input_img)
+    {
+        constexpr int target_width = 320;
+        constexpr int target_height = 240;
+        constexpr int target_area = target_width * target_height;
+        int input_area = input_img.cols * input_img.rows;
+
+        // check if we need to shrink input image
+        if (input_area > target_area)
+        {
+            scaling_factor = sqrt(target_area / (double)input_area);
+            // OpenCV docs recommend INTER_AREA interpolation for shrinking images
+            resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, CV_INTER_AREA);
+        }
+        else
+        {
+            scaling_factor = 0.0;
+            orig_img = input_img.clone();
+        }
+
+        normalize(orig_img, orig_img, 0, 255, NORM_MINMAX);
+
+        // appropriate pupil radius
+        constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
+        constexpr double max_pupil_diameter_ratio = 0.29;
+        const double diagonal = sqrt(orig_img.cols * orig_img.cols + orig_img.rows * orig_img.rows);
+
+        min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
+        max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
     }
     
     void Detector::detect_edges()
     {   
-        // NOTE: we assume the resizing to take place outside, which makes it easier for
-        // users to create the debug and output images
-        normalize(*orig_img, edge_img, 0, 255, NORM_MINMAX);
-        if (debug)
-        {
-            cvtColor(edge_img, *debug_img, COLOR_GRAY2BGR);
-            *debug_img *= 0.3;
-        }
-
         calculate_canny();
-
         thin_edges();
         break_crossings();
         straighten_edges();
@@ -126,7 +176,7 @@ namespace pure {
         // NOTE: Matlab appears to be using a blur-size of 15x15. This blur-size is
         // certainly resolution dependent. For a resolution of 320x240 we found 5x5 to
         // perform much better.
-        GaussianBlur(*orig_img, edge_img, Size(5, 5), 2, 2, BORDER_REPLICATE);
+        GaussianBlur(orig_img, edge_img, Size(5, 5), 2, 2, BORDER_REPLICATE);
 
         // (2) Gradient Computation
         // NOTE: although the description recommends DoG gradient computation, we found
@@ -829,7 +879,7 @@ namespace pure {
         const double minor = min(result.axes.width, result.axes.height);
         const double cos_angle = cos(result.angle * radian_per_degree);
         const double sin_angle = sin(result.angle * radian_per_degree);
-        const Rect bounds = Rect(0, 0, orig_img->cols, orig_img->rows);
+        const Rect bounds = Rect(0, 0, orig_img.cols, orig_img.rows);
         constexpr int bias = 5;
         for (int i = 0; i < n_iterations; ++i)
         {
@@ -852,7 +902,7 @@ namespace pure {
             }
 
             double inner_avg = 0;
-            LineIterator inner_line(*orig_img, inner_pt, outline_point);
+            LineIterator inner_line(orig_img, inner_pt, outline_point);
             for (int j = 0; j < inner_line.count; j++, ++inner_line)
             {
                 inner_avg += *(*inner_line);
@@ -860,7 +910,7 @@ namespace pure {
             inner_avg /= inner_line.count;
 
             double outer_avg = 0;
-            LineIterator outer_line(*orig_img, outline_point, outer_pt);
+            LineIterator outer_line(orig_img, outline_point, outer_pt);
             for (int j = 0; j < outer_line.count; j++, ++outer_line)
             {
                 outer_avg += *(*outer_line);

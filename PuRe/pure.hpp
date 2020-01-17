@@ -36,14 +36,18 @@ namespace pure {
         Result detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
 
     private:
-        Mat edge_img;
-        // Note: the pointers are not owned, but just cached here.
-        const Mat* orig_img;
-        Mat* debug_img;
-        bool debug = false;
+        // 3.1. Preprocessing
+        // NOTE: Most matrices are member variables, so they don't need to reallocate
+        // memory for subsequent detection passes if the image dimensions do not change.
+        Mat orig_img;       // preprocessed version of the input image
+        Mat debug_img;      // debug image
+        bool debug = false; // whether in debug mode
+        double scaling_factor;
+        void preprocess(const Mat& input_img);
 
     private:
         // 3.2. Edge Detection and Morphological Manipulation
+        Mat edge_img;
         void detect_edges();
         Mat dx_img, dy_img, mag_img, bin_img;
         void calculate_canny();

@@ -14,7 +14,8 @@ using namespace cv;
 
 int main()
 {
-	VideoCapture cap("../eye_segmentation_500K/p1_image.mp4");
+	// VideoCapture cap("../eye_segmentation_500K/p1_image.mp4");
+	VideoCapture cap("/media/pfa/P L/pfa/datasets/LPW/1/1.avi");
 	// VideoCapture cap("../eye0.mp4");
 
 	if (!cap.isOpened())
@@ -39,7 +40,7 @@ int main()
 				cerr << "Empty frame!" << endl;
 				break;
 			}
-			resize(color, color, Size(320, 240));
+
         	cvtColor(color, gray, COLOR_BGR2GRAY);
 
 			if (FRAME >= 0 && n < FRAME) {
@@ -50,7 +51,8 @@ int main()
 			}
 
 
-			debug = color.clone();
+			// debug = color.clone();
+			Mat debug;
 			auto result = detector.detect(gray, &debug);
 			// auto result = detector.detect(gray);
 			
@@ -66,9 +68,7 @@ int main()
 			imshow("Debug", debug);
 
 			moveWindow("Color", 200, 200);
-			moveWindow("Debug", 600, 200);
-			moveWindow("Matlab Canny", 200, 600);
-			moveWindow("PuRe Canny", 600, 600);
+			moveWindow("Debug", 1000, 200);
 
 			int KEY_ESC = 27;
 			if(waitKey(-1) == KEY_ESC) running = false;
