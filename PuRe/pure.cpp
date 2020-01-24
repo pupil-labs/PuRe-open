@@ -119,20 +119,19 @@ namespace pure {
 
     void Detector::preprocess(const Mat& input_img)
     {
-        constexpr int target_width = 320;
-        constexpr int target_height = 240;
+        constexpr int target_width = 192;
+        constexpr int target_height = 192;
         constexpr int target_area = target_width * target_height;
         int input_area = input_img.cols * input_img.rows;
 
         // check if we need to shrink input image
-        // TODO!!!
-        // if (input_area > target_area)
-        // {
-        //     scaling_factor = sqrt(target_area / (double)input_area);
-        //     // OpenCV docs recommend INTER_AREA interpolation for shrinking images
-        //     resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, CV_INTER_AREA);
-        // }
-        // else
+        if (input_area > target_area)
+        {
+            scaling_factor = sqrt(target_area / (double)input_area);
+            // OpenCV docs recommend INTER_AREA interpolation for shrinking images
+            resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, CV_INTER_AREA);
+        }
+        else
         {
             scaling_factor = 0.0;
             orig_img = input_img.clone();
@@ -992,19 +991,25 @@ namespace pure {
         {
             return Result();
         }
-        Result initial_pupil = *std::max_element(candidates.begin(), candidates.end());
-        double semi_major = max(initial_pupil.axes.width, initial_pupil.axes.height);
+        Result *initial_pupil = &*std::max_element(candidates.begin(), candidates.end());
+        double semi_major = max(initial_pupil->axes.width, initial_pupil->axes.height);
         Result *candidate = nullptr;
         for (auto& result : candidates)
         {
             if (result.confidence.value == 0) continue;
             if (result.confidence.outline_contrast < 0.75) continue;
-            if (max(result.axes.width, result.axes.height) > semi_major) continue;
-            if (norm(initial_pupil.center - result.center) > semi_major) continue;
+            if (&result == initial_pupil) continue;
+            // NOTE: The initial paper mentions to discard candidates with a diameter
+            // larger than the initial pupil's semi major, i.e. only candidates that are
+            // half the size are considered. In dark environments this leads to bad
+            // results though, as the pupil can be up to 80% of the iris size. Therefore
+            // we use 0.8 as threshold.
+            if (max(result.axes.width, result.axes.height) > 0.8 * semi_major) continue;
+            if (norm(initial_pupil->center - result.center) > semi_major) continue;
             if (candidate && result.confidence.value <= candidate->confidence.value) continue;
             candidate = &result;
         }
-        return (candidate) ? *candidate : initial_pupil;
+        return (candidate) ? *candidate : *initial_pupil;
     }
 
 }
