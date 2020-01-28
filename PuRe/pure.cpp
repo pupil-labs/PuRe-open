@@ -27,13 +27,14 @@ namespace pure {
         // the working image. It will be upscaled to input image size in the end.
 
         // preprocessing
-        preprocess(input_img);
-
-        if (debug)
+        if (!preprocess(input_img))
         {
-            // init debug view with preprocessed image
-            cvtColor(orig_img, debug_img, COLOR_GRAY2BGR);
-            debug_img *= 0.4;
+            // preprocessing can fail for invalid parameters
+            // TODO: add debug information?
+            // still postprocess in order to return correct debug image
+            Result dummy_result;
+            postprocess(dummy_result, input_img, debug_color_img);
+            return dummy_result;
         }
         
         detect_edges();
@@ -82,42 +83,24 @@ namespace pure {
             const Scalar black(0, 0, 0);
             const Scalar blue(255, 150, 0);
             Mat mask = Mat::zeros(size, CV_8UC3);
-            circle(mask, center, max_pupil_diameter / 2, white, FILLED);
-            circle(mask, center, min_pupil_diameter / 2, black, FILLED);
+            circle(mask, center, params.max_pupil_diameter / 2, white, FILLED);
+            circle(mask, center, params.min_pupil_diameter / 2, black, FILLED);
             Mat colored(size, CV_8UC3, blue);
             colored = min(mask, colored);
             debug_img = debug_img * 0.9 + colored * 0.1;
-            circle(debug_img, center, max_pupil_diameter / 2, blue);
-            circle(debug_img, center, min_pupil_diameter / 2, blue);
+            circle(debug_img, center, params.max_pupil_diameter / 2, blue);
+            circle(debug_img, center, params.min_pupil_diameter / 2, blue);
 
-            // Return the debug image. Make sure to enlarge if needed.
-            if (scaling_factor != 0.0)
-            {
-                Size input_size(input_img.cols, input_img.rows);
-                // OpenCV docs recommend INTER_CUBIC interpolation for enlarging images
-                resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, CV_INTER_CUBIC);
-            }
-            else
-            {
-                *debug_color_img = debug_img;
-            }
         }
 
-        Result final_segment = select_final_segment();
+        Result final_result = select_final_segment();
 
-        // Postprocessing:
-        // If we shrank the image, we need to enlarge the result.
-        if (scaling_factor != 0.0)
-        {
-            const float inverse_factor = 1.0 / scaling_factor;
-            final_segment.axes *= inverse_factor;
-            final_segment.center *= inverse_factor;
-        }
+        postprocess(final_result, input_img, debug_color_img);
 
-        return final_segment;
+        return final_result;
     }
 
-    void Detector::preprocess(const Mat& input_img)
+    bool Detector::preprocess(const Mat& input_img)
     {
         constexpr int target_width = 192;
         constexpr int target_height = 192;
@@ -139,13 +122,73 @@ namespace pure {
 
         normalize(orig_img, orig_img, 0, 255, NORM_MINMAX);
 
-        // appropriate pupil radius
-        constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
-        constexpr double max_pupil_diameter_ratio = 0.29;
-        const double diagonal = sqrt(orig_img.cols * orig_img.cols + orig_img.rows * orig_img.rows);
+        if (debug)
+        {
+            // init debug view with preprocessed image
+            cvtColor(orig_img, debug_img, COLOR_GRAY2BGR);
+            debug_img *= 0.4;
+        }
 
-        min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
-        max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
+        const double diameter_scaling_factor = scaling_factor == 0 ? 1.0 : sqrt(scaling_factor);
+        if (params.auto_pupil_diameter)
+        {
+            // compute automatic pupil radius bounds
+            constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
+            constexpr double max_pupil_diameter_ratio = 0.29;
+            const double diagonal = sqrt(orig_img.cols * orig_img.cols + orig_img.rows * orig_img.rows);
+
+            min_pupil_diameter = min_pupil_diameter_ratio * diagonal;
+            max_pupil_diameter = max_pupil_diameter_ratio * diagonal;
+
+            // report computed parameters back (scaled back)
+            params.min_pupil_diameter = min_pupil_diameter / diameter_scaling_factor;
+            params.max_pupil_diameter = max_pupil_diameter / diameter_scaling_factor;
+        }
+        else
+        {
+            // scale input parameters
+            min_pupil_diameter = params.min_pupil_diameter * diameter_scaling_factor;
+            max_pupil_diameter = params.max_pupil_diameter * diameter_scaling_factor;
+        }
+
+        // ensure valid values
+        bool success = (
+            0 <= min_pupil_diameter &&
+            0 <= max_pupil_diameter &&
+            min_pupil_diameter <= max_pupil_diameter
+        ); 
+
+        if (!success && debug)
+        {
+            putText(debug_img, "Invalid pupil size!", Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255));
+        }
+        return success;
+    }
+
+    void Detector::postprocess(Result& final_result, const Mat& input_img, Mat* debug_color_img)
+    {
+        // If we shrank the image, we need to enlarge the result.
+        if (scaling_factor != 0.0)
+        {
+            const float inverse_factor = 1.0 / scaling_factor;
+            final_result.axes *= inverse_factor;
+            final_result.center *= inverse_factor;
+        }
+
+        // same with debug image
+        if (debug)
+        {
+            if (scaling_factor != 0.0)
+            {
+                Size input_size(input_img.cols, input_img.rows);
+                // OpenCV docs recommend INTER_CUBIC interpolation for enlarging images
+                resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, CV_INTER_CUBIC);
+            }
+            else
+            {
+                *debug_color_img = debug_img;
+            }
+        }
     }
     
     void Detector::detect_edges()
@@ -702,18 +745,18 @@ namespace pure {
             {
                 approx_diameter = max(approx_diameter, norm(*p1 - *p2));
                 // we can early exit, because we will only get bigger
-                if (approx_diameter > max_pupil_diameter)
+                if (approx_diameter > params.max_pupil_diameter)
                 {
                     break;
                 }
             }
             // we can early exit, because we will only get bigger
-            if (approx_diameter > max_pupil_diameter)
+            if (approx_diameter > params.max_pupil_diameter)
             {
                 break;
             }
         }
-        return min_pupil_diameter < approx_diameter && approx_diameter < max_pupil_diameter;
+        return params.min_pupil_diameter < approx_diameter && approx_diameter < params.max_pupil_diameter;
     }
     bool Detector::segment_curvature_valid(const Segment& segment) const
     {

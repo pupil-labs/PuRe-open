@@ -3,6 +3,8 @@ import typing as T
 import numpy as np
 cimport numpy as np
 
+from libcpp cimport bool
+
 import cv2
 
 cdef extern from '<opencv2/core.hpp>':
@@ -31,12 +33,12 @@ cdef extern from '<opencv2/core.hpp>' namespace 'cv':
     ctypedef Size_[float] Size2f
 
 
-
-
-
-
-
 cdef extern from "pure.hpp" namespace "pure":
+
+    cdef struct Parameters:
+        bool auto_pupil_diameter
+        double min_pupil_diameter
+        double max_pupil_diameter
 
     cdef struct Confidence:
         double value
@@ -51,19 +53,49 @@ cdef extern from "pure.hpp" namespace "pure":
         Confidence confidence
     
     cdef cppclass Detector:
+        Parameters params
         Detector()
         Result detect(const Mat& gray_img)
         Result detect(const Mat& gray_img, Mat* debug_color_img)
 
 
+cdef class ParametersWrapper:
+    cdef Parameters c_params
+
+    def __cinit__(self):
+        # need to mimic default values from c++
+        self.c_params.auto_pupil_diameter = True
+        self.c_params.min_pupil_diameter = 0.0
+        self.c_params.max_pupil_diameter = 0.0
+
+    property auto_pupil_diameter:
+        def __get__(self):
+            return self.c_params.auto_pupil_diameter
+        def __set__(self, bool value):
+            self.c_params.auto_pupil_diameter = value
+
+    property min_pupil_diameter:
+        def __get__(self):
+            return self.c_params.min_pupil_diameter
+        def __set__(self, double value):
+            self.c_params.min_pupil_diameter = value
+
+    property max_pupil_diameter:
+        def __get__(self):
+            return self.c_params.max_pupil_diameter
+        def __set__(self, double value):
+            self.c_params.max_pupil_diameter = value
 
 
 cdef class PuReDetector:
+
+    cdef public ParametersWrapper params
 
     cdef Detector* c_detector_ptr
 
     def __cinit__(self, *args, **kwargs):
         self.c_detector_ptr = new Detector()
+        self.params = ParametersWrapper()
 
     def __dealloc__(self):
         del self.c_detector_ptr
@@ -90,15 +122,17 @@ cdef class PuReDetector:
 
         debug_img = None
 
+        self.c_detector_ptr.params = self.params.c_params
+
         if debug:
             debug_mat = Mat()
             c_result = self.c_detector_ptr.detect(gray_mat, &debug_mat)
             debug_img = np.empty((image_height, image_width, 3), dtype=np.uint8)
-            # debug_img_data = <unsigned char[:image_width, :image_height, :3]>debug_mat.data
             debug_img[...] = <unsigned char[:image_height, :image_width, :3]>debug_mat.data
-
         else:
             c_result = self.c_detector_ptr.detect(gray_mat, NULL)
+
+        self.params.c_params = self.c_detector_ptr.params
 
         # convert c struct to python dict
         result = {}

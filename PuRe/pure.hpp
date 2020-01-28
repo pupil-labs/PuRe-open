@@ -9,6 +9,16 @@ using namespace std;
 using namespace cv;
 
 namespace pure {
+
+    struct Parameters
+    {
+        // Either set auto_pupil_diameter = true or specify min/max.
+        // If auto, read min/max for automatic values.
+        bool auto_pupil_diameter = true;
+        double min_pupil_diameter = 0.0;
+        double max_pupil_diameter = 0.0;
+    };
+
     struct Confidence
     {
         double value = 0;
@@ -34,6 +44,7 @@ namespace pure {
     {
     public:
         Result detect(const Mat& gray_img, Mat* debug_color_img = nullptr);
+        Parameters params;
 
     private:
         // 3.1. Preprocessing
@@ -43,7 +54,8 @@ namespace pure {
         Mat debug_img;      // debug image
         bool debug = false; // whether in debug mode
         double scaling_factor;
-        void preprocess(const Mat& input_img);
+        bool preprocess(const Mat& input_img);
+        void postprocess(Result& final_result, const Mat& input_img, Mat* debug_color_img);
 
     private:
         // 3.2. Edge Detection and Morphological Manipulation
