@@ -1,0 +1,10 @@
+README.md
+setup.py
+_skbuild/linux-x86_64-3.8/cmake-install/pure_detector/pure_detector.cpython-38-x86_64-linux-gnu.so
+_skbuild/linux-x86_64-3.8/cmake-install/src/pure_detector/__init__.py
+src/pure_detector.egg-info/PKG-INFO
+src/pure_detector.egg-info/SOURCES.txt
+src/pure_detector.egg-info/dependency_links.txt
+src/pure_detector.egg-info/not-zip-safe
+src/pure_detector.egg-info/requires.txt
+src/pure_detector.egg-info/top_level.txt

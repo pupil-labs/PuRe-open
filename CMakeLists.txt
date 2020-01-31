@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.8)
 
-project ("PuRe")
+project("PuRe")
 
-add_subdirectory("PuRe")
+add_subdirectory("src/pure_detector")
