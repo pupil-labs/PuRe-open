@@ -12,6 +12,13 @@ import platform
 import LPW
 import eye_seg
 
+import subprocess
+commit_id = subprocess.check_output(
+    "git rev-parse --short HEAD",
+    encoding="utf-8"
+).strip()
+
+
 def LPW_iterator():
     for subject, video_id, n, target, frame in LPW.video_iterator():
         yield frame, target, f"{subject}.{video_id}.{n}"
@@ -22,23 +29,23 @@ def eye_seg_iterator():
 
 datasets = {
     "lpw": LPW_iterator,
-    "eyeseg500k": eye_seg_iterator,
+    # "eyeseg500k": eye_seg_iterator,
 }
 
 detectors = {
-    "2d": Detector2D(),
-    "pure_pfa": PuReDetector(),
-    "pure_orig": PuReOriginal(),
+    # "2d": Detector2D(),
+    f"pure_pfa_{commit_id}": PuReDetector(),
+    # "pure_orig": PuReOriginal(),
 }
 
 sizes = [
     "original",
-    "192x192",
-    "320x240",
+    # "192x192",
+    # "320x240",
 ]
 
 skip_patterns = [
-    "lpw",
+    # "lpw",
 ]
 
 computer = platform.node()
@@ -61,6 +68,8 @@ for dataset, iterator in datasets.items():
             data = []
 
             for i, (frame, target, data_key) in enumerate(iterator()):
+                if i == 10000:
+                    break
                 if i % 100 == 0:
                     print(method, i, data_key)
 
@@ -83,14 +92,18 @@ for dataset, iterator in datasets.items():
 
                 rescaling_factor = 1.0 / factor
 
-
+                cut = gray[200:300, 100:200].copy()
                 t1 = time.perf_counter()
-                result = detector.detect(gray)
+                result = detector.detect(gray[200:300, 100:200].copy())
                 t2 = time.perf_counter()
+                result = detector.detect(cut)
+                t3 = time.perf_counter()
+
 
                 entry = {
                     "data_key": data_key,
-                    "time": t2 - t1,
+                    "time1": t2 - t1,
+                    "time2": t3 - t2,
                     "method": method,
                     "target": np.array(target),
                     "confidence": result["confidence"],
