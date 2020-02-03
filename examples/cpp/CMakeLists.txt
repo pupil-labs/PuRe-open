@@ -32,7 +32,7 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")	# O2 is best speed optimization
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")		# debug: no optimization
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")					# MSVC warning levels: W3 < W4 < Wall (Wall is way to verbose!)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_MATH_DEFINES")	# for M_PI in <cmath>
+	add_definitions(-D_USE_MATH_DEFINES)							# for M_PI in <cmath>
 
 elseif(CMAKE_COMPILER_IS_GNUCXX)
 	message(STATUS "Detected g++ compiler: ${CMAKE_CXX_COMPILER}")

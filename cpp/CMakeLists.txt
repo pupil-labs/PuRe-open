@@ -13,3 +13,7 @@ find_package(OpenCV REQUIRED)
 add_library(pure_cpp_static STATIC pure.cpp pure.hpp)
 target_include_directories(pure_cpp_static PUBLIC .)
 target_link_libraries(pure_cpp_static ${OpenCV_LIBS})
+
+if(MSVC)
+	add_definitions(-D_USE_MATH_DEFINES)    # for M_PI in <cmath>
+endif()
