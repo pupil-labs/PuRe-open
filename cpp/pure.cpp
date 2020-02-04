@@ -83,13 +83,15 @@ namespace pure {
             const Scalar black(0, 0, 0);
             const Scalar blue(255, 150, 0);
             Mat mask = Mat::zeros(size, CV_8UC3);
-            circle(mask, center, params.max_pupil_diameter / 2, white, FILLED);
-            circle(mask, center, params.min_pupil_diameter / 2, black, FILLED);
+            const int min_pupil_radius = static_cast<int>(round(params.min_pupil_diameter / 2));
+            const int max_pupil_radius = static_cast<int>(round(params.max_pupil_diameter / 2));
+            circle(mask, center, max_pupil_radius, white, FILLED);
+            circle(mask, center, min_pupil_radius, black, FILLED);
             Mat colored(size, CV_8UC3, blue);
             colored = min(mask, colored);
             debug_img = debug_img * 0.9 + colored * 0.1;
-            circle(debug_img, center, params.max_pupil_diameter / 2, blue);
-            circle(debug_img, center, params.min_pupil_diameter / 2, blue);
+            circle(debug_img, center, max_pupil_radius, blue);
+            circle(debug_img, center, min_pupil_radius, blue);
 
         }
 
@@ -170,7 +172,7 @@ namespace pure {
         // If we shrank the image, we need to enlarge the result.
         if (scaling_factor != 0.0)
         {
-            const float inverse_factor = 1.0 / scaling_factor;
+            const float inverse_factor = static_cast<float>(1.0f / scaling_factor);
             final_result.axes *= inverse_factor;
             final_result.center *= inverse_factor;
         }
@@ -320,7 +322,7 @@ namespace pure {
             // calculate bin for every pixel
             double max_mag = 0;
             minMaxLoc(mag_img, nullptr, &max_mag);
-            float rescaling_factor = (n_bins - 1) / max_mag;
+            double rescaling_factor = (n_bins - 1) / max_mag;
             mag_img.convertTo(bin_img, CV_8U, rescaling_factor);
             array<int, n_bins> bins {};
             uchar* row;
