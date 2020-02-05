@@ -1,4 +1,6 @@
 from skbuild import setup
+import subprocess
+
 
 package_dir = "src"
 package = "pure_detector"
@@ -6,6 +8,17 @@ package = "pure_detector"
 install_requires = [
     "numpy",
 ]
+
+try:
+    git_hash = subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"], encoding="utf-8"
+    ).strip()
+except Exception:
+    git_hash = ""
+
+with open(f"{package_dir}/{package}/_meta.py", "w") as f:
+    f.writelines([f'git_hash = "{git_hash}"', ""])
+
 
 setup(
     author="Pupil Labs",
