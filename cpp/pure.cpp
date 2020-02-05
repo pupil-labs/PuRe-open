@@ -83,8 +83,8 @@ namespace pure {
             const Scalar black(0, 0, 0);
             const Scalar blue(255, 150, 0);
             Mat mask = Mat::zeros(size, CV_8UC3);
-            const int min_pupil_radius = static_cast<int>(round(params.min_pupil_diameter / 2));
-            const int max_pupil_radius = static_cast<int>(round(params.max_pupil_diameter / 2));
+            const int min_pupil_radius = static_cast<int>(round(min_pupil_diameter / 2));
+            const int max_pupil_radius = static_cast<int>(round(max_pupil_diameter / 2));
             circle(mask, center, max_pupil_radius, white, FILLED);
             circle(mask, center, min_pupil_radius, black, FILLED);
             Mat colored(size, CV_8UC3, blue);
@@ -131,11 +131,11 @@ namespace pure {
             debug_img *= 0.4;
         }
 
-        const double diameter_scaling_factor = scaling_factor == 0 ? 1.0 : sqrt(scaling_factor);
+        const double diameter_scaling_factor = scaling_factor == 0 ? 1.0 : scaling_factor;
         if (params.auto_pupil_diameter)
         {
             // compute automatic pupil radius bounds
-            constexpr double min_pupil_diameter_ratio = 0.07 * 2/3;
+            constexpr double min_pupil_diameter_ratio = 0.07 * 2 / 3;
             constexpr double max_pupil_diameter_ratio = 0.29;
             const double diagonal = sqrt(orig_img.cols * orig_img.cols + orig_img.rows * orig_img.rows);
 
@@ -747,18 +747,18 @@ namespace pure {
             {
                 approx_diameter = max(approx_diameter, norm(*p1 - *p2));
                 // we can early exit, because we will only get bigger
-                if (approx_diameter > params.max_pupil_diameter)
+                if (approx_diameter > max_pupil_diameter)
                 {
                     break;
                 }
             }
             // we can early exit, because we will only get bigger
-            if (approx_diameter > params.max_pupil_diameter)
+            if (approx_diameter > max_pupil_diameter)
             {
                 break;
             }
         }
-        return params.min_pupil_diameter < approx_diameter && approx_diameter < params.max_pupil_diameter;
+        return min_pupil_diameter < approx_diameter && approx_diameter < max_pupil_diameter;
     }
     bool Detector::segment_curvature_valid(const Segment& segment) const
     {
