@@ -92,10 +92,41 @@ namespace pure {
             debug_img = debug_img * 0.9 + colored * 0.1;
             circle(debug_img, center, max_pupil_radius, blue);
             circle(debug_img, center, min_pupil_radius, blue);
-
         }
 
         Result final_result = select_final_segment();
+
+        // draw confidence and pupil diameter info
+        if (debug)
+        {
+            // confidence indicator
+            const double c = final_result.confidence.value;
+            const Scalar color(0, 255 * min(1.0, 2.0 * c), 255 * min(1.0, 2.0 * (1 - c)));
+            int decimal = static_cast<int>(round(c * 10));
+            string confidence_string = decimal >= 10 ? "1.0" : "0." + to_string(decimal);
+            float font_scale = 0.4;
+            const Scalar white(255, 255, 255);
+            int pos = static_cast<int>(round(c * debug_img.cols));
+            line(debug_img, Point(pos, debug_img.rows), Point(pos, debug_img.rows - 20), color, 2);
+            int baseline = 0;
+            Size text_size = getTextSize(confidence_string, FONT_HERSHEY_SIMPLEX, font_scale, 1, &baseline);
+            putText(debug_img, confidence_string, Point(c < 0.5 ? pos : pos - text_size.width, debug_img.rows - 20), FONT_HERSHEY_SIMPLEX, font_scale, white);
+
+            // if conf > 0, visualize pupil diameter
+            if (c > 0)
+            {
+                Point center(orig_img.cols / 2, orig_img.rows / 2);
+                const Scalar green(0, 255, 0);
+                int diameter = static_cast<int>(round(max(final_result.axes.width, final_result.axes.height)));
+                circle(debug_img, center, diameter, green);
+
+                const float inverse_factor = scaling_factor != 0.0 ? static_cast<float>(1.0f / scaling_factor) : 1.0;
+                string diameter_text = to_string(diameter);
+                text_size = getTextSize(diameter_text, FONT_HERSHEY_SIMPLEX, font_scale, 1, &baseline);
+                Point text_offset = Point(text_size.width, -text_size.height) / 2;
+                putText(debug_img, diameter_text, center - text_offset, FONT_HERSHEY_SIMPLEX, font_scale, white);
+            }
+        }
 
         postprocess(final_result, input_img, debug_color_img);
 
