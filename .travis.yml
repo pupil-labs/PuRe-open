@@ -1,0 +1,44 @@
+################################################################################
+# ENVIRONMENT TEMPLATES
+################################################################################
+
+# can't merge arrays in YAML so we have to duplicate stuff between 36 and 37
+# and include all variables that are relevant across all operating systems
+env_py36: &env_py36
+  env:
+    - PYTHON_VERSION=3.6.8
+    - PY_MM=36
+    - TOXENV=py${PY_MM}
+    - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
+env_py37: &env_py37
+  env:
+    - PYTHON_VERSION=3.7.4
+    - PY_MM=37
+    - TOXENV=py${PY_MM}
+    - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
+
+
+################################################################################
+# OS JOB TEMPLATES
+################################################################################
+
+
+win_base_job: &win_base_job
+  os: windows
+  language: sh
+  before_install:
+    - .travis/win_dependencies.sh
+  script:
+    - ls opencv
+
+
+################################################################################
+# DEFINE JOB MATRIX
+################################################################################
+
+matrix:
+  include:
+    - name: "Python 3.6.8 on Windows"
+      <<: *win_base_job
+      <<: *env_py36
+    

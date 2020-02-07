@@ -2,3 +2,5 @@
 build
 .venv
 .vscode
+.ipynb_checkpoints
+dependencies
