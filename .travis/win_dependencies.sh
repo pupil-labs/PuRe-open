@@ -16,6 +16,8 @@ else
     mkdir -p build
     cd build
     # MSMF: see https://github.com/skvark/opencv-python/issues/263
+    # CUDA/TBB: turned off because not easy to install on Windows and we cannot easily
+    # ship this with the wheel.
     cmake ..\
         -G"Visual Studio 15 2017 Win64"\
         -DCMAKE_BUILD_TYPE=Release\
@@ -26,14 +28,13 @@ else
         -DBUILD_DOCS=OFF\
         -DBUILD_PERF_TESTS=OFF\
         -DBUILD_TESTS=OFF\
-        -DBUILD_TBB=ON\
-        -DWITH_TBB=ON\
         -DWITH_OPENMP=ON\
         -DWITH_IPP=ON\
         -DWITH_NVCUVID=ON\
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
         -DWITH_CUDA=OFF\
+        -DWITH_TBB=OFF\
         -DWITH_MSMF=OFF
     cmake --build . --target INSTALL --config Release --parallel
     cd ../..
