@@ -1,6 +1,9 @@
 #!/bin/bash
 set -ev
 
+mkdir -p dependencies
+cd dependencies
+
 # Opencv
 # Downloading the precompiled installer for windows and executing via cmd is actually
 # faster than compiling yourself. Note: The .exe is a 7-zip self extracting archive,
