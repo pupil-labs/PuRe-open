@@ -41,7 +41,7 @@ base_jobs:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
       before_script:
-        - pip wheel . -w dist --no-deps -vvv
+        - pip wheel . -w dist --no-deps
         - ls dist
         - pip install dist/*.whl
         # vcredist is required for loading the DLLs correctly
