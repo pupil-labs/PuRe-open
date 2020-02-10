@@ -5,8 +5,6 @@ cimport numpy as np
 
 from libcpp cimport bool
 
-import cv2
-
 cdef extern from '<opencv2/core.hpp>':
   int CV_8UC1
   int CV_8UC3
