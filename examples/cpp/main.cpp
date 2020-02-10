@@ -52,7 +52,6 @@ int main()
 
 
 			// debug = color.clone();
-			Mat debug;
 			auto result = detector.detect(gray, &debug);
 			// auto result = detector.detect(gray);
 			
