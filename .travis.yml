@@ -44,6 +44,8 @@ base_jobs:
         - pip wheel . -w dist --no-deps -vvv
         - ls dist
         - pip install dist/*.whl
+        # vcredist is required for loading the DLLs correctly
+        - choco install vcredist2010
       script:
         - python -c "from pure_detector import PuReDetector"
 
