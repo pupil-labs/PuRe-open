@@ -39,6 +39,7 @@ base_jobs:
       install:
         - .travis/win_dependencies.sh
         - export OpenCV_DIR=${PWD}/dependencies/opencv
+        - export PATH=${OpenCV_DIR}/build/x64/vc15/bin;$PATH
       before_script:
         - pip wheel . -w dist --no-deps -vvv
         - ls dist

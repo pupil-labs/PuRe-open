@@ -24,6 +24,8 @@ else
     rm -rf opencv-4.2.0-vc14_vc15.exe
 fi
 
+ls /c/Python${PY_MM}
+
 # Python
 # NOTE: The folder PythonMM will be created by the cache even if not cached. Need to
 # check for subfolder existence
