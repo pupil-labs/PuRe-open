@@ -26,7 +26,10 @@ env_py37: &env_py37
 win_base_job: &win_base_job
   os: windows
   language: sh
-  cache: dependencies
+  cache:
+    directories:
+      - dependencies
+      - /c/Python${PY_MM}
   before_install:
     - .travis/win_dependencies.sh
     - export OpenCV_DIR=${PWD}/dependencies/opencv
