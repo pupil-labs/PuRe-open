@@ -39,6 +39,8 @@ base_jobs:
         - .travis/win_dependencies.sh
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
+        - choco install python --version $PYTHON_VERSION
+        - python -m pip install -U pip
       before_script:
         - pip wheel . -w dist --no-deps
         - ls dist
@@ -55,3 +57,14 @@ jobs:
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
       <<: *env_py36
+
+deploy:
+  - provider: releases
+    on:
+      all_branches: true
+      tags: false
+    skip_cleanup: true
+    draft: true
+    api_key: $GitHubOAUTH
+    file_glob: true
+    file: "./dist/*"

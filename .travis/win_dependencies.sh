@@ -42,8 +42,3 @@ else
     rm -rf opencv.zip
     rm -rf opencv-4.2.0
 fi
-
-# Python
-echo "Installing Python ${PYTHON_VERSION} with choco..."
-choco install python --version $PYTHON_VERSION
-python -m pip install -U pip
