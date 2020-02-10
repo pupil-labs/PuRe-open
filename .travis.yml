@@ -17,7 +17,12 @@ env_py37: &env_py37
     - TOXENV=py${PY_MM}
     - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
 
-
+# Export all variables to be available for scripts.
+# NOTE: This means we cannot use before_install in jobs anymore.
+before_install:
+  - export PY_MM
+  - export PYTHON_VERSION
+  - export PATH
 ################################################################################
 # OS JOB TEMPLATES
 ################################################################################
@@ -30,13 +35,11 @@ win_base_job: &win_base_job
     directories:
       - dependencies
       - /c/Python${PY_MM}
-  before_install:
-    - export PY_MM
+  install:
     - .travis/win_dependencies.sh
     - export OpenCV_DIR=${PWD}/dependencies/opencv
-  install:
-    - pip wheel . -w dist --no-deps
   before_script:
+    - pip wheel . -w dist --no-deps
     - ls dist
     - pip install dist/*.whl
   script:
