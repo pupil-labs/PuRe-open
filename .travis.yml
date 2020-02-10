@@ -29,8 +29,15 @@ win_base_job: &win_base_job
   cache: dependencies
   before_install:
     - .travis/win_dependencies.sh
+    - export OpenCV_DIR=${PWD}/dependencies/opencv
+  install:
+    - pip wheel . -w dist --no-deps
+  before_script:
+    - ls dist
+    - pip install dist/*.whl
   script:
-    - ls dependencies/opencv
+    - python -c "from pure_detector import PuReDetector"
+
 
 
 ################################################################################
@@ -42,4 +49,3 @@ matrix:
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
       <<: *env_py36
-    
