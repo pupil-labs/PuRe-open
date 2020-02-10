@@ -32,7 +32,6 @@ else
         -DBUILD_opencv_python=OFF\
         -DWITH_OPENMP=ON\
         -DWITH_IPP=ON\
-        -DWITH_NVCUVID=ON\
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
         -DWITH_CUDA=OFF\
