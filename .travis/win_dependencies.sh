@@ -10,7 +10,7 @@ then
     echo "Found cached OpenCV."
 else
     echo "Rebuilding OpenCV cache..."
-    wget -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
+    wget -O -q opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
     unzip -q opencv.zip
     cd opencv-4.2.0
     mkdir -p build
