@@ -145,7 +145,11 @@ namespace pure {
         {
             scaling_factor = sqrt(target_area / (double)input_area);
             // OpenCV docs recommend INTER_AREA interpolation for shrinking images
+#if CV_MAJOR_VERSION == 3
             resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, CV_INTER_AREA);
+#elif CV_MAJOR_VERSION == 4
+            resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, InterpolationFlags::INTER_AREA);
+#endif
         }
         else
         {
@@ -215,7 +219,11 @@ namespace pure {
             {
                 Size input_size(input_img.cols, input_img.rows);
                 // OpenCV docs recommend INTER_CUBIC interpolation for enlarging images
+#if CV_MAJOR_VERSION == 3
                 resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, CV_INTER_CUBIC);
+#elif CV_MAJOR_VERSION == 4
+                resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, InterpolationFlags::INTER_CUBIC);
+#endif
             }
             else
             {
