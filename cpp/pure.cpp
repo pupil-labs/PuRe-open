@@ -104,7 +104,7 @@ namespace pure {
             const Scalar color(0, 255 * min(1.0, 2.0 * c), 255 * min(1.0, 2.0 * (1 - c)));
             int decimal = static_cast<int>(round(c * 10));
             string confidence_string = decimal >= 10 ? "1.0" : "0." + to_string(decimal);
-            float font_scale = 0.4;
+            float font_scale = 0.4f;
             const Scalar white(255, 255, 255);
             int pos = static_cast<int>(round(c * debug_img.cols));
             line(debug_img, Point(pos, debug_img.rows), Point(pos, debug_img.rows - 20), color, 2);
@@ -120,7 +120,7 @@ namespace pure {
                 int diameter = static_cast<int>(round(max(final_result.axes.width, final_result.axes.height)));
                 circle(debug_img, center, diameter, green);
 
-                const float inverse_factor = scaling_factor != 0.0 ? static_cast<float>(1.0f / scaling_factor) : 1.0;
+                const float inverse_factor = scaling_factor != 0.0f ? static_cast<float>(1.0f / scaling_factor) : 1.0f;
                 string diameter_text = to_string(diameter);
                 text_size = getTextSize(diameter_text, FONT_HERSHEY_SIMPLEX, font_scale, 1, &baseline);
                 Point text_offset = Point(text_size.width, -text_size.height) / 2;
@@ -145,7 +145,11 @@ namespace pure {
         {
             scaling_factor = sqrt(target_area / (double)input_area);
             // OpenCV docs recommend INTER_AREA interpolation for shrinking images
+#if CV_MAJOR_VERSION == 3
             resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, CV_INTER_AREA);
+#elif CV_MAJOR_VERSION == 4
+            resize(input_img, orig_img, Size(0, 0), scaling_factor, scaling_factor, InterpolationFlags::INTER_AREA);
+#endif
         }
         else
         {
@@ -215,7 +219,11 @@ namespace pure {
             {
                 Size input_size(input_img.cols, input_img.rows);
                 // OpenCV docs recommend INTER_CUBIC interpolation for enlarging images
+#if CV_MAJOR_VERSION == 3
                 resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, CV_INTER_CUBIC);
+#elif CV_MAJOR_VERSION == 4
+                resize(debug_img, *debug_color_img, input_size, 0.0, 0.0, InterpolationFlags::INTER_CUBIC);
+#endif
             }
             else
             {
