@@ -29,7 +29,7 @@ win_base_job: &win_base_job
   before_install:
     - .travis/win_dependencies.sh
   script:
-    - ls opencv
+    - ls dependencies/opencv
 
 
 ################################################################################
