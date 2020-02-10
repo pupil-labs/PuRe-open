@@ -6,9 +6,7 @@ from skbuild import setup
 package_dir = "src"
 package = "pure_detector"
 
-install_requires = [
-    "numpy",
-]
+install_requires = ["numpy", "opencv-python"]
 
 try:
     git_hash = subprocess.check_output(
