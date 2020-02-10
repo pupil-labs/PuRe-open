@@ -22,17 +22,18 @@ else
         -DCMAKE_INSTALL_PREFIX=../../opencv\
         -DBUILD_LIST=core,highgui,videoio,imgcodecs,imgproc,video\
         -DBUILD_opencv_world=ON\
-        -DWITH_TBB=ON\
-        -DWITH_OPENMP=ON\
-        -DWITH_IPP=ON\
         -DBUILD_EXAMPLES=OFF\
-        -DWITH_NVCUVID=ON\
-        -DWITH_CUDA=ON\
         -DBUILD_DOCS=OFF\
         -DBUILD_PERF_TESTS=OFF\
         -DBUILD_TESTS=OFF\
+        -DBUILD_TBB=ON\
+        -DWITH_TBB=ON\
+        -DWITH_OPENMP=ON\
+        -DWITH_IPP=ON\
+        -DWITH_NVCUVID=ON\
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
+        -DWITH_CUDA=OFF\
         -DWITH_MSMF=OFF
     cmake --build . --target INSTALL --config Release --parallel
     cd ../..
