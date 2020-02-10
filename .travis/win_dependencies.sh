@@ -1,6 +1,13 @@
 #!/bin/bash
 set -ev
 
+if [[ -d dependencies/opencv ]]
+then
+    echo "Found cached OpenCV."
+    exit 0
+fi
+echo "Rebuilding OpenCV cache."
+
 mkdir -p dependencies
 cd dependencies
 

@@ -26,6 +26,7 @@ env_py37: &env_py37
 win_base_job: &win_base_job
   os: windows
   language: sh
+  cache: dependencies
   before_install:
     - .travis/win_dependencies.sh
   script:
