@@ -25,7 +25,9 @@ else
 fi
 
 # Python
-if [[ -d /c/Python${PY_MM} ]]
+# NOTE: The folder PythonMM will be created by the cache even if not cached. Need to
+# check for subfolder existence
+if [[ -d /c/Python${PY_MM}/Scripts ]]
 then
     echo "Found cached Python."
     python --version
