@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ev
+set -e
 
 if [[ -d dependencies/opencv ]]
 then
