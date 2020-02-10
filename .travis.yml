@@ -39,7 +39,7 @@ win_base_job: &win_base_job
     - .travis/win_dependencies.sh
     - export OpenCV_DIR=${PWD}/dependencies/opencv
   before_script:
-    - pip wheel . -w dist --no-deps
+    - pip wheel . -w dist --no-deps -vvv
     - ls dist
     - pip install dist/*.whl
   script:
