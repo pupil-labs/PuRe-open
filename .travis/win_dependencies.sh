@@ -28,6 +28,8 @@ else
         -DBUILD_DOCS=OFF\
         -DBUILD_PERF_TESTS=OFF\
         -DBUILD_TESTS=OFF\
+        -DBUILD_opencv_java=OFF\
+        -DBUILD_opencv_python=OFF\
         -DWITH_OPENMP=ON\
         -DWITH_IPP=ON\
         -DWITH_NVCUVID=ON\
