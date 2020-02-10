@@ -4,18 +4,19 @@
 
 # can't merge arrays in YAML so we have to duplicate stuff between 36 and 37
 # and include all variables that are relevant across all operating systems
-env_py36: &env_py36
-  env:
-    - PYTHON_VERSION=3.6.8
-    - PY_MM=36
-    - TOXENV=py${PY_MM}
-    - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
-env_py37: &env_py37
-  env:
-    - PYTHON_VERSION=3.7.4
-    - PY_MM=37
-    - TOXENV=py${PY_MM}
-    - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
+py_env_settings:
+  - setting: &env_py36
+      env:
+        - PYTHON_VERSION=3.6.8
+        - PY_MM=36
+        - TOXENV=py${PY_MM}
+        - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
+  - setting: &env_py37
+      env:
+        - PYTHON_VERSION=3.7.4
+        - PY_MM=37
+        - TOXENV=py${PY_MM}
+        - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
 
 # Export all variables to be available for scripts.
 # NOTE: This means we cannot use before_install in jobs anymore.
@@ -27,31 +28,29 @@ before_install:
 # OS JOB TEMPLATES
 ################################################################################
 
-
-win_base_job: &win_base_job
-  os: windows
-  language: sh
-  cache:
-    directories:
-      - dependencies
-      - /c/Python${PY_MM}
-  install:
-    - .travis/win_dependencies.sh
-    - export OpenCV_DIR=${PWD}/dependencies/opencv
-  before_script:
-    - pip wheel . -w dist --no-deps -vvv
-    - ls dist
-    - pip install dist/*.whl
-  script:
-    - python -c "from pure_detector import PuReDetector"
-
-
+base_jobs:
+  - job: &win_base_job
+      os: windows
+      language: shell
+      cache:
+        directories:
+          - dependencies
+          - /c/Python${PY_MM}
+      install:
+        - .travis/win_dependencies.sh
+        - export OpenCV_DIR=${PWD}/dependencies/opencv
+      before_script:
+        - pip wheel . -w dist --no-deps -vvv
+        - ls dist
+        - pip install dist/*.whl
+      script:
+        - python -c "from pure_detector import PuReDetector"
 
 ################################################################################
 # DEFINE JOB MATRIX
 ################################################################################
 
-matrix:
+jobs:
   include:
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
