@@ -13,8 +13,14 @@ py_env_settings:
         - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
   - setting: &env_py37
       env:
-        - PYTHON_VERSION=3.7.4
+        - PYTHON_VERSION=3.7.6
         - PY_MM=37
+        - TOXENV=py${PY_MM}
+        - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
+  - setting: &env_py38
+      env:
+        - PYTHON_VERSION=3.8.1
+        - PY_MM=38
         - TOXENV=py${PY_MM}
         - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
 
@@ -57,6 +63,14 @@ jobs:
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
       <<: *env_py36
+
+    - name: "Python 3.7.6 on Windows"
+      <<: *win_base_job
+      <<: *env_py37
+
+    - name: "Python 3.8.1 on Windows"
+      <<: *win_base_job
+      <<: *env_py38
 
 deploy:
   - provider: releases
