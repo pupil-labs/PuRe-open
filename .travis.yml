@@ -88,7 +88,7 @@ job_templates:
         draft: true
         api_key: $GitHubOAUTH
         file_glob: true
-        file: ./dist/*"
+        file: ./dist/*
 
 ################################################################################
 # DEFINE JOB MATRIX
