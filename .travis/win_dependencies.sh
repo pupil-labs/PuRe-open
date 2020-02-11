@@ -5,13 +5,16 @@ mkdir -p dependencies
 cd dependencies
 
 # Opencv
-echo "\e[34mChecking OpenCV cache...\e[0m"
+echo -e "\e[34mChecking OpenCV cache...\e[0m"
 if [[ -d opencv ]]
 then
-    echo "\e[32mFound OpenCV cache. Build configuration:\e[0m"
-    opencv/x64/vc15/bin/opencv_version_win32.exe
+    echo -e "\e[32mFound OpenCV cache. Build configuration:\e[0m"
+    # NOTE: the opencv version info blocks with a confirm UI dialog after printing the
+    # build information. With timeout we simply kill it again after printing the build
+    # information.
+    timeout 1 opencv/x64/vc15/bin/opencv_version_win32.exe
 else
-    echo "\e[33mOpenCV cache missing. Rebuilding...\e[0m"
+    echo -e "\e[33mOpenCV cache missing. Rebuilding...\e[0m"
     wget -q -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
     unzip -q opencv.zip
     cd opencv-4.2.0
