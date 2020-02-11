@@ -72,8 +72,10 @@ base_jobs:
       workspaces:
         use: win-dist
       script:
-        - find $CASHER_DIR
-        - find .
+        - mkdir -p dist
+        # TODO: horrible hack to make cross-platform workspaces work on travis. I assume
+        # this will be fixed at some point, at which we will have to change this again.
+        - cp ./C:/Users/travis/build/pupil-labs/pfa-pupil-detector/dist/* dist/
       deploy:
         provider: releases
         on:
@@ -85,13 +87,11 @@ base_jobs:
         draft: true
         api_key: $GitHubOAUTH
         file_glob: true
-        file: "${CASHER_DIR}/win-dist-fetch.tgz"
+        file: ./dist/*"
 
 ################################################################################
 # DEFINE JOB MATRIX
 ################################################################################
-
-before_install: pwd
 
 jobs:
   include:
