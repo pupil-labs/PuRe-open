@@ -41,8 +41,10 @@ job_templates:
       cache: dependencies
       workspaces:
         create:
-          name: dependencies
-          paths: ./dependencies
+          - name: dependencies
+            paths: ./dependencies
+          - name: win-dist
+            paths: ./dist
       script:
         - .travis/setup_opencv_win.sh
 
@@ -51,10 +53,9 @@ job_templates:
       os: windows
       language: shell
       workspaces:
-        use: dependencies
-        create:
-          name: win-dist
-          paths: ./dist
+        use:
+          - dependencies
+          - win-dist
       install:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
