@@ -42,7 +42,7 @@ base_jobs:
       workspaces:
         create:
           name: dependencies
-          paths: dependencies
+          paths: ./dependencies
       script:
         - .travis/win_dependencies.sh
 
@@ -54,7 +54,7 @@ base_jobs:
         use: dependencies
         create:
           name: dist
-          paths: dist
+          paths: ./dist
       install:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
