@@ -24,25 +24,34 @@ py_env_settings:
         - TOXENV=py${PY_MM}
         - PATH=/c/Python${PY_MM}:/c/Python${PY_MM}/Scripts:$PATH
 
-# Export all variables to be available for scripts.
-# NOTE: This means we cannot use before_install in jobs anymore.
-before_install:
-  - export PY_MM
-  - export PYTHON_VERSION
-  - export PATH
 ################################################################################
 # OS JOB TEMPLATES
 ################################################################################
 
+stages:
+  - setup
+  - main
+  - deploy
+
 base_jobs:
-  - job: &win_base_job
+  - job: &win_setup_job
+      stage: setup
       os: windows
       language: shell
-      cache:
-        directories:
-          - dependencies
-      install:
+      cache: dependencies
+      workspaces:
+        create: dependencies
+      script:
         - .travis/win_dependencies.sh
+
+  - job: &win_base_job
+      stage: main
+      os: windows
+      language: shell
+      workspaces:
+        use: dependencies
+        create: dist
+      install:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
         - choco install python --version $PYTHON_VERSION
@@ -54,12 +63,33 @@ base_jobs:
       script:
         - python -c "from pure_detector import PuReDetector"
 
+  - job: &deploy_job
+      stage: deploy
+      workspaces:
+        use: dist
+      script: ls dist
+      deploy:
+        provider: releases
+        on:
+          all_branches: true
+          tags: false
+        name: "Travis Build for $TRAVIS_COMMIT"
+        body: "Testing automated builds."
+        skip_cleanup: true
+        draft: true
+        api_key: $GitHubOAUTH
+        file_glob: true
+        file: "./dist/*"
+
 ################################################################################
 # DEFINE JOB MATRIX
 ################################################################################
 
 jobs:
   include:
+    - name: "Windows Setup"
+      <<: *win_setup_job
+
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
       <<: *env_py36
@@ -72,15 +102,5 @@ jobs:
       <<: *win_base_job
       <<: *env_py38
 
-deploy:
-  - provider: releases
-    on:
-      all_branches: true
-      tags: false
-    name: "Travis Build for $TRAVIS_COMMIT"
-    body: "Testing automated builds."
-    skip_cleanup: true
-    draft: true
-    api_key: $GitHubOAUTH
-    file_glob: true
-    file: "./dist/*"
+    - name: "Deployment"
+      <<: *deploy_job
