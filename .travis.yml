@@ -44,6 +44,7 @@ job_templates:
           name: dependencies-linux
           paths: ./dependencies
       script:
+        - chmod +x .travis/check_opencv_manylinux.sh
         - .travis/check_opencv_manylinux.sh
         - find ./dependencies
 
