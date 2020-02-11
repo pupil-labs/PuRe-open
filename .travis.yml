@@ -66,13 +66,12 @@ base_jobs:
         - pip install dist/*.whl
       script:
         - python -c "from pure_detector import PuReDetector"
-        - mv dist/* /dist
 
   - job: &deploy_job
       stage: deploy
       workspaces:
         use: win-dist
-      script: find /c/
+      script: find $CASHER_DIR
       # deploy:
       #   provider: releases
       #   on:
