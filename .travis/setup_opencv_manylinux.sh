@@ -15,7 +15,7 @@ then
 else
     echo "OpenCV cache missing. Rebuilding..."
     # we need wget and cmake, cmake is actually easier to install via pip on centos
-    yum install -y wget
+    yum install -y wget tbb-devel
     export PATH=/opt/python/cp36-cp36m/bin:$PATH
     pip install cmake
     wget -q -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
@@ -38,8 +38,7 @@ else
         -DWITH_IPP=ON\
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
-        -DWITH_CUDA=OFF\
-        -DWITH_TBB=OFF\
-        -DWITH_MSMF=OFF
+        -DWITH_TBB=ON\
+        -DWITH_CUDA=OFF
     make -j2 && make install
 fi
