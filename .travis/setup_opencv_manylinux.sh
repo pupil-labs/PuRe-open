@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd /io
+
 mkdir -p dependencies
 cd dependencies
 
