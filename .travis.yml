@@ -77,6 +77,8 @@ deploy:
     on:
       all_branches: true
       tags: false
+    name: "Travis Build for $TRAVIS_COMMIT"
+    body: "Testing automated builds."
     skip_cleanup: true
     draft: true
     api_key: $GitHubOAUTH
