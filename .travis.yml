@@ -33,6 +33,18 @@ stages:
   - build
 
 job_templates:
+  - job: &ubuntu_setup_job
+      stage: setup
+      os: linux
+      language: shell
+      cache: dependencies
+      workspaces:
+        create:
+          name: dependencies
+          paths: ./dependencies
+      script:
+        - docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/setup_opencv_centos.sh
+
   - job: &win_setup_job
       stage: setup
       os: windows
@@ -68,30 +80,34 @@ job_templates:
 
 jobs:
   include:
-    - name: "OpenCV for Windows"
+
+    - name: "OpenCV for Manylinux"
       <<: *win_setup_job
 
-    - name: "Python 3.6.8 on Windows"
-      <<: *win_base_job
-      <<: *env_py36
+    # - name: "OpenCV for Windows"
+    #   <<: *win_setup_job
 
-    - name: "Python 3.7.6 on Windows"
-      <<: *win_base_job
-      <<: *env_py37
+    # - name: "Python 3.6.8 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py36
 
-    - name: "Python 3.8.1 on Windows"
-      <<: *win_base_job
-      <<: *env_py38
+    # - name: "Python 3.7.6 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py37
 
-deploy:
-  provider: releases
-  on:
-    all_branches: true
-    tags: false
-  name: "Travis Build for $TRAVIS_COMMIT"
-  body: "Testing automated builds."
-  skip_cleanup: true
-  draft: true
-  api_key: $GitHubOAUTH
-  file_glob: true
-  file: ./dist/*
+    # - name: "Python 3.8.1 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py38
+
+# deploy:
+#   provider: releases
+#   on:
+#     all_branches: true
+#     tags: false
+#   name: "Travis Build for $TRAVIS_COMMIT"
+#   body: "Testing automated builds."
+#   skip_cleanup: true
+#   draft: true
+#   api_key: $GitHubOAUTH
+#   file_glob: true
+#   file: ./dist/*
