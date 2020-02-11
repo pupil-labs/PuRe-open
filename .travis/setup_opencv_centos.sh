@@ -39,5 +39,5 @@ else
         -DWITH_CUDA=OFF\
         -DWITH_TBB=OFF\
         -DWITH_MSMF=OFF
-    make -j && make install
+    make -j2 && make install
 fi

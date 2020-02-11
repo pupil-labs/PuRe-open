@@ -35,12 +35,13 @@ stages:
 job_templates:
   - job: &ubuntu_setup_job
       stage: setup
+      services: docker
       os: linux
       language: shell
       cache: dependencies
       workspaces:
         create:
-          name: dependencies
+          name: dependencies-linux
           paths: ./dependencies
       script:
         - docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/setup_opencv_centos.sh
@@ -52,17 +53,25 @@ job_templates:
       cache: dependencies
       workspaces:
         create:
-          name: dependencies
+          name: dependencies-win
           paths: ./dependencies
       script:
         - .travis/setup_opencv_win.sh
+
+  - job: &manylinux_base_job
+      stage: build
+      services: docker
+      os: linux
+      language: shell
+      workspaces:
+        use: dependencies-linux
 
   - job: &win_base_job
       stage: build
       os: windows
       language: shell
       workspaces:
-        use: dependencies
+        use: dependencies-win
       install:
         - choco install python --version $PYTHON_VERSION
         - python -m pip install -U pip
