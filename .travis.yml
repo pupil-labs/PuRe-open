@@ -31,7 +31,6 @@ py_env_settings:
 stages:
   - setup
   - build
-  - deploy
 
 job_templates:
   - job: &win_setup_job
@@ -41,10 +40,8 @@ job_templates:
       cache: dependencies
       workspaces:
         create:
-          - name: dependencies
-            paths: ./dependencies
-          - name: win-dist
-            paths: ./dist
+          name: dependencies
+          paths: ./dependencies
       script:
         - .travis/setup_opencv_win.sh
 
@@ -53,43 +50,17 @@ job_templates:
       os: windows
       language: shell
       workspaces:
-        use:
-          - dependencies
-          - win-dist
+        use: dependencies
       install:
-        - export OpenCV_DIR=${PWD}/dependencies/opencv
-        - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
         - choco install python --version $PYTHON_VERSION
         - python -m pip install -U pip
       before_script:
+        - export OpenCV_DIR=${PWD}/dependencies/opencv
         - pip wheel . -w dist --no-deps
-        - ls dist
+      script:
         - pip install dist/*.whl
-      script:
+        - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
         - python -c "from pure_detector import PuReDetector"
-
-  - job: &deploy_job
-      stage: deploy
-      workspaces:
-        use: win-dist
-      script:
-        - mkdir -p dist
-        # TODO: horrible hack to make cross-platform workspaces work on travis. I assume
-        # this will be fixed at some point, at which we will have to change this again.
-        - cp ./C:/Users/travis/build/pupil-labs/pfa-pupil-detector/dist/* dist/
-        - find dist
-      deploy:
-        provider: releases
-        on:
-          all_branches: true
-          tags: false
-        name: "Travis Build for $TRAVIS_COMMIT"
-        body: "Testing automated builds."
-        skip_cleanup: true
-        draft: true
-        api_key: $GitHubOAUTH
-        file_glob: true
-        file: ./dist/*
 
 ################################################################################
 # DEFINE JOB MATRIX
@@ -112,5 +83,15 @@ jobs:
       <<: *win_base_job
       <<: *env_py38
 
-    - name: "Deployment"
-      <<: *deploy_job
+deploy:
+  provider: releases
+  on:
+    all_branches: true
+    tags: false
+  name: "Travis Build for $TRAVIS_COMMIT"
+  body: "Testing automated builds."
+  skip_cleanup: true
+  draft: true
+  api_key: $GitHubOAUTH
+  file_glob: true
+  file: ./dist/*
