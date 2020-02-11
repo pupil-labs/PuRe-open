@@ -68,6 +68,7 @@ job_templates:
         use: dependencies-linux
       script:
         - chmod +x .travis/build_wheels_manylinux.sh
+        - export OpenCV_DIR=${PWD}/dependencies/opencv
         - docker run --rm -e PY_MM=$PY_MM -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/build_wheels_manylinux.sh
 
   - job: &win_base_job
