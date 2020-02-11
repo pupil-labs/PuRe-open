@@ -82,7 +82,7 @@ jobs:
   include:
 
     - name: "OpenCV for Manylinux"
-      <<: *win_setup_job
+      <<: *ubuntu_setup_job
 
     # - name: "OpenCV for Windows"
     #   <<: *win_setup_job
