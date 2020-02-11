@@ -30,10 +30,10 @@ py_env_settings:
 
 stages:
   - setup
-  - main
+  - build
   - deploy
 
-base_jobs:
+job_templates:
   - job: &win_setup_job
       stage: setup
       os: windows
@@ -44,10 +44,10 @@ base_jobs:
           name: dependencies
           paths: ./dependencies
       script:
-        - .travis/win_dependencies.sh
+        - .travis/setup_opencv_win.sh
 
   - job: &win_base_job
-      stage: main
+      stage: build
       os: windows
       language: shell
       workspaces:
@@ -76,6 +76,7 @@ base_jobs:
         # TODO: horrible hack to make cross-platform workspaces work on travis. I assume
         # this will be fixed at some point, at which we will have to change this again.
         - cp ./C:/Users/travis/build/pupil-labs/pfa-pupil-detector/dist/* dist/
+        - find dist
       deploy:
         provider: releases
         on:
@@ -95,7 +96,7 @@ base_jobs:
 
 jobs:
   include:
-    - name: "Windows Setup"
+    - name: "OpenCV for Windows"
       <<: *win_setup_job
 
     - name: "Python 3.6.8 on Windows"
