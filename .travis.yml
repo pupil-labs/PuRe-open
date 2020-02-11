@@ -89,6 +89,8 @@ base_jobs:
 # DEFINE JOB MATRIX
 ################################################################################
 
+before_install: pwd
+
 jobs:
   include:
     - name: "Windows Setup"
