@@ -71,7 +71,9 @@ base_jobs:
       stage: deploy
       workspaces:
         use: win-dist
-      script: find $CASHER_DIR
+      script:
+        - find $CASHER_DIR
+        - find .
       deploy:
         provider: releases
         on:
