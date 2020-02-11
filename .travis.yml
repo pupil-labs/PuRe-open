@@ -46,6 +46,7 @@ job_templates:
       script:
         - chmod +x .travis/setup_opencv_manylinux.sh
         - docker run --rm -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/setup_opencv_manylinux.sh
+        - find ./dependencies
 
   - job: &win_setup_job
       stage: setup
