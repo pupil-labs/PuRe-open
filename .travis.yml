@@ -54,7 +54,7 @@ base_jobs:
         use: dependencies
         create:
           name: dist
-          paths: ./dist
+          paths: /dist
       install:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
@@ -66,12 +66,13 @@ base_jobs:
         - pip install dist/*.whl
       script:
         - python -c "from pure_detector import PuReDetector"
+        - mv dist/* /dist
 
   - job: &deploy_job
       stage: deploy
       workspaces:
         use: dist
-      script: ls dist
+      script: ls /dist
       deploy:
         provider: releases
         on:
@@ -83,7 +84,7 @@ base_jobs:
         draft: true
         api_key: $GitHubOAUTH
         file_glob: true
-        file: "./dist/*"
+        file: "/dist/*"
 
 ################################################################################
 # DEFINE JOB MATRIX
