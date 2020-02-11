@@ -41,4 +41,7 @@ else
         -DWITH_TBB=ON\
         -DWITH_CUDA=OFF
     make -j2 && make install
+    cd ../..
+    rm -rf opencv.zip
+    rm -rf opencv-4.2.0
 fi
