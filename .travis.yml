@@ -72,18 +72,18 @@ base_jobs:
       workspaces:
         use: win-dist
       script: find $CASHER_DIR
-      # deploy:
-      #   provider: releases
-      #   on:
-      #     all_branches: true
-      #     tags: false
-      #   name: "Travis Build for $TRAVIS_COMMIT"
-      #   body: "Testing automated builds."
-      #   skip_cleanup: true
-      #   draft: true
-      #   api_key: $GitHubOAUTH
-      #   file_glob: true
-      #   file: "/dist/*"
+      deploy:
+        provider: releases
+        on:
+          all_branches: true
+          tags: false
+        name: "Travis Build for $TRAVIS_COMMIT"
+        body: "Testing automated builds."
+        skip_cleanup: true
+        draft: true
+        api_key: $GitHubOAUTH
+        file_glob: true
+        file: "${CASHER_DIR}/win-dist-fetch.tgz"
 
 ################################################################################
 # DEFINE JOB MATRIX
