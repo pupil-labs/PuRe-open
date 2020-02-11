@@ -6,6 +6,7 @@ echo "Checking OpenCV cache..."
 if [[ -d dependencies/opencv ]]
 then
     echo "Found OpenCV cache. Build configuration:"
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PWD}/dependencies/opencv/lib64
     dependencies/opencv/bin/opencv_version -v
 else
     echo "OpenCV cache missing. Rebuilding..."
