@@ -53,8 +53,8 @@ base_jobs:
       workspaces:
         use: dependencies
         create:
-          name: dist
-          paths: /dist
+          name: win-dist
+          paths: ./dist
       install:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
@@ -71,20 +71,20 @@ base_jobs:
   - job: &deploy_job
       stage: deploy
       workspaces:
-        use: dist
-      script: ls /dist
-      deploy:
-        provider: releases
-        on:
-          all_branches: true
-          tags: false
-        name: "Travis Build for $TRAVIS_COMMIT"
-        body: "Testing automated builds."
-        skip_cleanup: true
-        draft: true
-        api_key: $GitHubOAUTH
-        file_glob: true
-        file: "/dist/*"
+        use: win-dist
+      script: find /c/
+      # deploy:
+      #   provider: releases
+      #   on:
+      #     all_branches: true
+      #     tags: false
+      #   name: "Travis Build for $TRAVIS_COMMIT"
+      #   body: "Testing automated builds."
+      #   skip_cleanup: true
+      #   draft: true
+      #   api_key: $GitHubOAUTH
+      #   file_glob: true
+      #   file: "/dist/*"
 
 ################################################################################
 # DEFINE JOB MATRIX
