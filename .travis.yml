@@ -113,7 +113,8 @@ job_templates:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
         - pip wheel . -w raw_wheels --no-deps
         - pip install delocate
-        - export DYLD_LIBRARY_PATH=${OpenCV_DIR}/lib:$DYLD_LIBRARY_PATH
+        - export DYLD_LIBRARY_PATH=${OpenCV_DIR}/lib
+        - find DYLD_LIBRARY_PATH
         - delocate-wheel -w dist -v raw_wheels/*
       # script:
       #   - pip install dist/*.whl
