@@ -34,8 +34,10 @@ elif platform.system() == "Linux":
     # This is required for the build on manylinux.
     cmake_args.append('-DCMAKE_CXX_FLAGS="-fPIC"')
 elif platform.system() == "Darwin":
-    # Assuming we are using clang, we need to enable cpp17 specifically
-    cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++17"')
+    # Assuming we are using clang, we need to enable cpp17 specifically. LLVM < 5 does
+    # not support -std=c++17, but we are using LLVM 4.0 on travis, so we need to use
+    # c++1z. See https://clang.llvm.org/cxx_status.html
+    cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
 
 
 
