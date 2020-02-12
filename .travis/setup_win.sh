@@ -1,19 +1,15 @@
 #!/bin/bash
 set -e
 
-mkdir -p dependencies
-cd dependencies
 
 # Opencv
 echo "Checking OpenCV cache..."
-if [[ -d opencv ]]
+if [[ -d dependencies/opencv ]]
 then
     echo "Found OpenCV cache. Build configuration:"
-    # NOTE: the opencv version info blocks with a confirm UI dialog after printing the
-    # build information. With timeout we simply kill it again after printing the build
-    # information. Since this will fail, we || true so we continue the script.
-    timeout 1 opencv/x64/vc15/bin/opencv_version_win32.exe || true
+    dependencies/opencv/x64/vc15/bin/opencv_version.exe -v
 else
+    cd dependencies
     echo "OpenCV cache missing. Rebuilding..."
     wget -q -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
     unzip -q opencv.zip
@@ -46,4 +42,29 @@ else
     cd ../..
     rm -rf opencv.zip
     rm -rf opencv-4.2.0
+    cd ..
+fi
+
+# Python
+echo "Checking Python cache..."
+if [[ -d /c/Python36 ]]
+then
+    echo "Python36 installed with version: $(/c/Python36/bin/python --version)"
+else
+    echo "Installing Python36..."
+    choco install python --version 3.6.8
+fi
+if [[ -d /c/Python37 ]]
+then
+    echo "Python37 installed with version: $(/c/Python37/bin/python --version)"
+else
+    echo "Installing Python37..."
+    choco install python --version 3.7.6
+fi
+if [[ -d /c/Python38 ]]
+then
+    echo "Python38 installed with version: $(/c/Python38/bin/python --version)"
+else
+    echo "Installing Python38..."
+    choco install python --version 3.8.1
 fi

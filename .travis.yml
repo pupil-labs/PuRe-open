@@ -77,13 +77,23 @@ job_templates:
       <<: *setup_job
       os: windows
       language: shell
-      cache: dependencies
+      cache:
+        directories:
+          - dependencies
+          - /c/Python36
+          - /c/Python37
+          - /c/Python38
       workspaces:
         create:
-          name: dependencies-win
-          paths: ./dependencies
+          - name: dependencies-win
+            paths: ./dependencies
+          - name: python-win
+            paths:
+              - /c/Python36
+              - /c/Python37
+              - /c/Python38
       script:
-        - .travis/setup_opencv_win.sh
+        - .travis/setup_win.sh
 
   - job: &manylinux_base_job
       stage: build
@@ -126,7 +136,6 @@ job_templates:
       workspaces:
         use: dependencies-win
       install:
-        - choco install python --version $PYTHON_VERSION
         - python -m pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
@@ -160,17 +169,18 @@ jobs:
     # - name: "Python 3.8 on Manylinux"
     #   <<: *manylinux_base_job
     #   <<: *env_py38
-    # - name: "OpenCV for Windows"
-    #   <<: *win_setup_job
-    # - name: "Python 3.6.8 on Windows"
-    #   <<: *win_base_job
-    #   <<: *env_py36
-    # - name: "Python 3.7.6 on Windows"
-    #   <<: *win_base_job
-    #   <<: *env_py37
-    # - name: "Python 3.8.1 on Windows"
-    #   <<: *win_base_job
-    #   <<: *env_py38
+    
+    - name: "OpenCV and Python for Windows"
+      <<: *win_setup_job
+    - name: "Python 3.6.8 on Windows"
+      <<: *win_base_job
+      <<: *env_py36
+    - name: "Python 3.7.6 on Windows"
+      <<: *win_base_job
+      <<: *env_py37
+    - name: "Python 3.8.1 on Windows"
+      <<: *win_base_job
+      <<: *env_py38
 
 # deploy:
 #   provider: releases
