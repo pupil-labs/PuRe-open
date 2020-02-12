@@ -63,6 +63,7 @@ job_templates:
           name: dependencies-mac
           paths: ./dependencies
       script:
+        - chmod +x .travis/setup_opencv_mac.sh
         - .travis/setup_opencv_mac.sh
         - find ./dependencies
 
@@ -143,7 +144,6 @@ deploy:
   on:
     all_branches: true
     tags: false
-    condition:
   name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
   skip_cleanup: true
   draft: true
