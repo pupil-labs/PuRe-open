@@ -41,7 +41,7 @@ fi
 
 # Python
 echo "Checking pyenv cache..."
-if [[ -d .pyenv ]]
+if [[ -d .pyenv/bin ]]
 then
     echo "Found pyenv cache. Installed versions:"
     .pyenv/bin/pyenv versions
