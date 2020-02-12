@@ -33,6 +33,7 @@ stages:
   - build
 
 job_templates:
+
   - job: &ubuntu_setup_job
       stage: setup
       services: docker
@@ -60,6 +61,21 @@ job_templates:
       script:
         - .travis/setup_opencv_win.sh
 
+
+  - job: &deployable
+      deploy:
+      provider: releases
+      on:
+        all_branches: true
+        tags: false
+        condition: 
+      name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+      skip_cleanup: true
+      draft: true
+      api_key: $GitHubOAUTH
+      file_glob: true
+      file: ./dist/*
+
   - job: &manylinux_base_job
       stage: build
       services: docker
@@ -70,6 +86,7 @@ job_templates:
       script:
         - chmod +x .travis/build_wheels_manylinux.sh
         - docker run --rm -e PY_MM=$PY_MM -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/build_wheels_manylinux.sh
+      <<: *deployable
 
   - job: &win_base_job
       stage: build
@@ -125,14 +142,4 @@ jobs:
     #   <<: *win_base_job
     #   <<: *env_py38
 
-deploy:
-  provider: releases
-  on:
-    all_branches: true
-    tags: false
-  name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
-  skip_cleanup: true
-  draft: true
-  api_key: $GitHubOAUTH
-  file_glob: true
-  file: ./dist/*
+
