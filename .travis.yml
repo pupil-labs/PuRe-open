@@ -33,9 +33,12 @@ stages:
   - build
 
 job_templates:
+  - job: &setup_job
+      stage: setup
+      deploy: skip
 
   - job: &ubuntu_setup_job
-      stage: setup
+      <<: *setup_job
       services: docker
       os: linux
       language: shell
@@ -49,8 +52,22 @@ job_templates:
         - .travis/check_opencv_manylinux.sh
         - find ./dependencies
 
+  - job: &mac_setup_job
+      <<: *setup_job
+      os: osx
+      osx_image: xcode9.2 # latest xcode for 10.12
+      language: shell
+      cache: dependencies
+      workspaces:
+        create:
+          name: dependencies-mac
+          paths: ./dependencies
+      script:
+        - .travis/setup_opencv_mac.sh
+        - find ./dependencies
+
   - job: &win_setup_job
-      stage: setup
+      <<: *setup_job
       os: windows
       language: shell
       cache: dependencies
@@ -60,21 +77,6 @@ job_templates:
           paths: ./dependencies
       script:
         - .travis/setup_opencv_win.sh
-
-
-  - job: &deployable
-      deploy:
-        provider: releases
-        on:
-          all_branches: true
-          tags: false
-          condition: 
-        name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
-        skip_cleanup: true
-        draft: true
-        api_key: $GitHubOAUTH
-        file_glob: true
-        file: ./dist/*
 
   - job: &manylinux_base_job
       stage: build
@@ -86,7 +88,6 @@ job_templates:
       script:
         - chmod +x .travis/build_wheels_manylinux.sh
         - docker run --rm -e PY_MM=$PY_MM -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/build_wheels_manylinux.sh
-      <<: *deployable
 
   - job: &win_base_job
       stage: build
@@ -111,35 +112,41 @@ job_templates:
 
 jobs:
   include:
+    - name: "OpenCV for MacOS 10.12"
+      <<: *mac_setup_job
 
-    - name: "OpenCV for Manylinux"
-      <<: *ubuntu_setup_job
-
-    - name: "Python 3.6.8 on Manylinux"
-      <<: *manylinux_base_job
-      <<: *env_py36
-
-    - name: "Python 3.7.6 on Manylinux"
-      <<: *manylinux_base_job
-      <<: *env_py37
-
-    - name: "Python 3.8.1 on Manylinux"
-      <<: *manylinux_base_job
-      <<: *env_py38
-
+    # - name: "OpenCV for Manylinux"
+    #   <<: *ubuntu_setup_job
+    # - name: "Python 3.6.8 on Manylinux"
+    #   <<: *manylinux_base_job
+    #   <<: *env_py36
+    # - name: "Python 3.7.6 on Manylinux"
+    #   <<: *manylinux_base_job
+    #   <<: *env_py37
+    # - name: "Python 3.8.1 on Manylinux"
+    #   <<: *manylinux_base_job
+    #   <<: *env_py38
     # - name: "OpenCV for Windows"
     #   <<: *win_setup_job
-
     # - name: "Python 3.6.8 on Windows"
     #   <<: *win_base_job
     #   <<: *env_py36
-
     # - name: "Python 3.7.6 on Windows"
     #   <<: *win_base_job
     #   <<: *env_py37
-
     # - name: "Python 3.8.1 on Windows"
     #   <<: *win_base_job
     #   <<: *env_py38
 
-
+deploy:
+  provider: releases
+  on:
+    all_branches: true
+    tags: false
+    condition:
+  name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+  skip_cleanup: true
+  draft: true
+  api_key: $GitHubOAUTH
+  file_glob: true
+  file: ./dist/*
