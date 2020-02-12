@@ -57,15 +57,22 @@ job_templates:
       os: osx
       osx_image: xcode9.2 # latest xcode for 10.12
       language: shell
-      cache: dependencies
+      cache:
+        directories:
+          - dependencies
+          - .pyenv
       workspaces:
-        create:
-          name: dependencies-mac
-          paths: ./dependencies
+        - create:
+            name: dependencies-mac
+            paths: ./dependencies
+        - create:
+            name: pyenv-mac
+            paths: ./.pyenv
       script:
-        - chmod +x .travis/setup_opencv_mac.sh
-        - .travis/setup_opencv_mac.sh
+        - chmod +x .travis/setup_mac.sh
+        - .travis/setup_mac.sh
         - find ./dependencies
+        - .pyenv/bin/pyenv versions
 
   - job: &win_setup_job
       <<: *setup_job

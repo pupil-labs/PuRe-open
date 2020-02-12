@@ -1,17 +1,15 @@
 #!/bin/bash
 set -e
 
-mkdir -p dependencies
-cd dependencies
-
 # Opencv
 echo "Checking OpenCV cache..."
-if [[ -d opencv ]]
+if [[ -d dependencies/opencv ]]
 then
     echo "Found OpenCV cache. Build configuration:"
-    opencv/bin/opencv_version -v
+    dependencies/opencv/bin/opencv_version -v
 else
     echo "OpenCV cache missing. Rebuilding..."
+    cd dependencies
     wget -q -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
     unzip -q opencv.zip
     cd opencv-4.2.0
@@ -38,4 +36,20 @@ else
     cd ../..
     rm -rf opencv.zip
     rm -rf opencv-4.2.0
+    cd ..
+fi
+
+# Python
+echo "Checking pyenv cache..."
+if [[ -d .pyenv ]]
+then
+    echo "Found pyenv cache. Installed versions:"
+    .pyenv/bin/pyenv versions
+else
+    echo "pyenv cache missing. Installing..."
+    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    export PATH=.pyenv/bin:$PATH
+    pyenv install 3.6.9
+    pyenv install 3.7.6
+    pyenv install 3.8.1
 fi
