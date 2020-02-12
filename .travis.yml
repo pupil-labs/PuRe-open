@@ -100,6 +100,9 @@ job_templates:
         use: dependencies-mac
       install:
         - pyenv install --list
+        - cd $(pyenv root) && git describe
+        - cd $(pyenv root) && git pull
+        - pyenv install --list
 
   - job: &win_base_job
       stage: build
