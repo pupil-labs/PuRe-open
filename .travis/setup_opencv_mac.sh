@@ -16,9 +16,6 @@ else
     cd opencv-4.2.0
     mkdir -p build
     cd build
-    # MSMF: see https://github.com/skvark/opencv-python/issues/263
-    # CUDA/TBB: turned off because not easy to install on Windows and we cannot easily
-    # ship this with the wheel.
     cmake ..\
         -DCMAKE_BUILD_TYPE=Release\
         -DCMAKE_INSTALL_PREFIX=../../opencv\
@@ -34,10 +31,9 @@ else
         -DWITH_IPP=ON\
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
-        -DWITH_CUDA=OFF\
         -DWITH_TBB=OFF\
-        -DWITH_MSMF=OFF
-    cmake --build . --target INSTALL --config Release --parallel
+        -DWITH_CUDA=OFF
+    make -j2 && make install
     cd ../..
     rm -rf opencv.zip
     rm -rf opencv-4.2.0
