@@ -125,15 +125,14 @@ jobs:
     #   <<: *win_base_job
     #   <<: *env_py38
 
-# deploy:
-#   provider: releases
-#   on:
-#     all_branches: true
-#     tags: false
-#   name: "Travis Build for $TRAVIS_COMMIT"
-#   body: "Testing automated builds."
-#   skip_cleanup: true
-#   draft: true
-#   api_key: $GitHubOAUTH
-#   file_glob: true
-#   file: ./dist/*
+deploy:
+  provider: releases
+  on:
+    all_branches: true
+    tags: false
+  name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+  skip_cleanup: true
+  draft: true
+  api_key: $GitHubOAUTH
+  file_glob: true
+  file: ./dist/*
