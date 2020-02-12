@@ -134,7 +134,9 @@ job_templates:
       os: windows
       language: shell
       workspaces:
-        use: dependencies-win
+        use:
+          - dependencies-win
+          - python-win
       install:
         - python -m pip install -U pip
       before_script:
