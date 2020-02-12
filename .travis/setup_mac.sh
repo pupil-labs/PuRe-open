@@ -49,6 +49,8 @@ else
     echo "pyenv cache missing. Installing..."
     git clone https://github.com/pyenv/pyenv.git .pyenv
     export PATH=.pyenv/bin:$PATH
+    eval "$(pyenv init -)"
+    pyenv install --list
     pyenv install 3.6.8
     pyenv install 3.7.6
     pyenv install 3.8.1
