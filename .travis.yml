@@ -114,7 +114,7 @@ job_templates:
         - pip wheel . -w raw_wheels --no-deps
         - pip install delocate
         - cp ${OpenCV_DIR}/lib/*.dylib raw_wheels
-        - delocate-wheel -w dist -v raw_wheels/*
+        - delocate-wheel -w dist -v raw_wheels/*.whl
       # script:
       #   - pip install dist/*.whl
       #   - python -c "from pure_detector import PuReDetector"
