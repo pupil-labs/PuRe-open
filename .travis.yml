@@ -147,6 +147,9 @@ jobs:
     - name: "Python 3.6.8 on MacOS 10.12"
       <<: *mac_base_job
       <<: *env_py36
+    - name: "Python 3.7.6 on MacOS 10.12"
+      <<: *mac_base_job
+      <<: *env_py37
 
     # - name: "OpenCV for Manylinux"
     #   <<: *ubuntu_setup_job
