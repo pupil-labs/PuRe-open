@@ -23,6 +23,7 @@ else
     cd opencv-4.2.0
     mkdir -p build
     cd build
+    # opencv 4.x needs cpp11 support
     cmake ..\
         -DCMAKE_BUILD_TYPE=Release\
         -DCMAKE_INSTALL_PREFIX=../../opencv\

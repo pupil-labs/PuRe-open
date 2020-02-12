@@ -31,7 +31,12 @@ if platform.system() == "Windows":
     # need to use msvc for compatibility.
     cmake_args.append("-GVisual Studio 15 2017 Win64")
 elif platform.system() == "Linux":
+    # This is required for the build on manylinux.
     cmake_args.append('-DCMAKE_CXX_FLAGS="-fPIC"')
+elif platform.system() == "Darwin":
+    # Assuming we are using clang, we need to enable cpp17 specifically
+    cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++17"')
+
 
 
 external_package_data = []
