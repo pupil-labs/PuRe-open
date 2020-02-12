@@ -3,9 +3,9 @@ set -e
 
 # Opencv
 echo "Checking OpenCV cache..."
-if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac opencv\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac opencv]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache]" ]]
 then
     echo "CLEARING OPENCV CACHE..."
     echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
@@ -49,9 +49,9 @@ fi
 
 # Python
 echo "Checking pyenv cache..."
-if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac pyenv\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac pyenv]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache]" ]]
 then
     echo "CLEARING PYENV CACHE..."
     echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
@@ -64,7 +64,8 @@ then
 else
     echo "pyenv cache missing. Installing..."
     git clone https://github.com/pyenv/pyenv.git .pyenv
-    export PATH=.pyenv/bin:$PATH
+    export PYENV_ROOT=${PWD}/.pyenv
+    export PATH=$PYENV_ROOT/bin:$PATH
     eval "$(pyenv init -)"
     pyenv install --list
     pyenv install 3.6.8

@@ -3,9 +3,9 @@ set -e
 
 # Opencv
 echo "Checking OpenCV cache..."
-if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache linux opencv\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache linux\]" ]] || \
-    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache linux opencv]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache linux]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache]" ]]
 then
     echo "CLEARING OPENCV CACHE..."
     echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
