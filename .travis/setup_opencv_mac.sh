@@ -9,7 +9,7 @@ echo "Checking OpenCV cache..."
 if [[ -d opencv ]]
 then
     echo "Found OpenCV cache. Build configuration:"
-    dependencies/opencv/bin/opencv_version -v
+    opencv/bin/opencv_version -v
 else
     echo "OpenCV cache missing. Rebuilding..."
     wget -q -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
