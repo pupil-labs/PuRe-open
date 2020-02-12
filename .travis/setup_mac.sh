@@ -47,9 +47,9 @@ then
     .pyenv/bin/pyenv versions
 else
     echo "pyenv cache missing. Installing..."
-    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    git clone https://github.com/pyenv/pyenv.git .pyenv
     export PATH=.pyenv/bin:$PATH
-    pyenv install 3.6.9
+    pyenv install 3.6.8
     pyenv install 3.7.6
     pyenv install 3.8.1
 fi

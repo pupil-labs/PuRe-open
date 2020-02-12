@@ -103,10 +103,21 @@ job_templates:
       osx_image: xcode9.2 # latest xcode for 10.12
       language: shell
       workspaces:
-        use: dependencies-mac
+        use:
+          - dependencies-mac
+          - pyenv-mac
       install:
-        - brew upgrade pyenv
-        - pyenv install --list
+        - export PATH=.pyenv/bin:$PATH
+        - pyenv global $PYTHON_VERSION
+        - python --version
+        - pip install -U pip
+      before_script:
+        - export OpenCV_DIR=${PWD}/dependencies/opencv
+        - pip wheel . -w dist --no-deps
+      script:
+        - pip install dist/*.whl
+        - export DYLD_LIBRARY_PATH=${OpenCV_DIR}/lib:$DYLD_LIBRARY_PATH
+        - python -c "from pure_detector import PuReDetector"
 
   - job: &win_base_job
       stage: build
@@ -131,11 +142,12 @@ job_templates:
 
 jobs:
   include:
-    - name: "OpenCV for MacOS 10.12"
+    - name: "OpenCV and Python for MacOS 10.12"
       <<: *mac_setup_job
 
-    - name: "MacOS 10.12"
+    - name: "Python 3.6.8 on MacOS 10.12"
       <<: *mac_base_job
+      <<: *env_py36
 
     # - name: "OpenCV for Manylinux"
     #   <<: *ubuntu_setup_job
