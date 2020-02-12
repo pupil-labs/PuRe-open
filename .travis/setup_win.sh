@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+echo $TRAVIS_COMMIT_MESSAGE
 
 # Opencv
 echo "Checking OpenCV cache..."
@@ -47,21 +48,21 @@ fi
 
 # Python
 echo "Checking Python cache..."
-if [[ -d /c/Python36 ]]
+if [[ -d /c/Python36/bin ]]
 then
     echo "Python36 installed with version: $(/c/Python36/bin/python --version)"
 else
     echo "Installing Python36..."
     choco install python --version 3.6.8
 fi
-if [[ -d /c/Python37 ]]
+if [[ -d /c/Python37/bin ]]
 then
     echo "Python37 installed with version: $(/c/Python37/bin/python --version)"
 else
     echo "Installing Python37..."
     choco install python --version 3.7.6
 fi
-if [[ -d /c/Python38 ]]
+if [[ -d /c/Python38/bin ]]
 then
     echo "Python38 installed with version: $(/c/Python38/bin/python --version)"
 else
