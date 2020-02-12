@@ -115,8 +115,9 @@ job_templates:
         - pip wheel . -w dist --no-deps
       script:
         - pip install dist/*.whl
-        - export DYLD_LIBRARY_PATH=${OpenCV_DIR}/lib:$DYLD_LIBRARY_PATH
-        - python -c "from pure_detector import PuReDetector"
+        - cp $OpenCV_DIR/lib/*.dylib .
+        - ls -la
+        - true | python -c "from pure_detector import PuReDetector"
 
   - job: &win_base_job
       stage: build
@@ -173,14 +174,14 @@ jobs:
     #   <<: *win_base_job
     #   <<: *env_py38
 
-# deploy:
-#   provider: releases
-#   on:
-#     all_branches: true
-#     tags: false
-#   name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
-#   skip_cleanup: true
-#   draft: true
-#   api_key: $GitHubOAUTH
-#   file_glob: true
-#   file: ./dist/*
+deploy:
+  provider: releases
+  on:
+    all_branches: true
+    tags: false
+  name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+  skip_cleanup: true
+  draft: true
+  api_key: $GitHubOAUTH
+  file_glob: true
+  file: ./dist/*
