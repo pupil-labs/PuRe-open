@@ -62,11 +62,10 @@ job_templates:
           - dependencies
           - .pyenv
       workspaces:
-        - create:
-            name: dependencies-mac
+        create:
+          - name: dependencies-mac
             paths: ./dependencies
-        - create:
-            name: pyenv-mac
+          - name: pyenv-mac
             paths: ./.pyenv
       script:
         - chmod +x .travis/setup_mac.sh
