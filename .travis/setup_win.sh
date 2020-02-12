@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-echo $TRAVIS_COMMIT_MESSAGE
-
 # Opencv
 if [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache win opencv]" ]] || \
     [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache win]" ]] || \

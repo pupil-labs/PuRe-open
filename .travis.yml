@@ -35,7 +35,7 @@ stages:
 job_templates:
   - job: &setup_job
       stage: setup
-      deploy: skip
+      deploy:
 
   - job: &ubuntu_setup_job
       <<: *setup_job
@@ -109,6 +109,7 @@ job_templates:
       install:
         - export PYENV_ROOT=${PWD}/.pyenv
         - export PATH=$PYENV_ROOT/bin:$PATH
+        - eval "$(pyenv init -)"
         - pyenv global $PYTHON_VERSION
         - python --version
         - pip install -U pip

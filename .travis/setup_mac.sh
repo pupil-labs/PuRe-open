@@ -48,6 +48,8 @@ else
 fi
 
 # Python
+export PYENV_ROOT=${PWD}/.pyenv
+export PATH=$PYENV_ROOT/bin:$PATH
 echo "Checking pyenv cache..."
 if [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac pyenv]" ]] || \
     [[ $TRAVIS_COMMIT_MESSAGE =~ "[travis: clear-cache mac]" ]] || \
@@ -60,12 +62,11 @@ fi
 if [[ -d .pyenv/bin ]]
 then
     echo "Found pyenv cache. Installed versions:"
-    .pyenv/bin/pyenv versions
+    eval "$(pyenv init -)"
+    pyenv versions
 else
     echo "pyenv cache missing. Installing..."
     git clone https://github.com/pyenv/pyenv.git .pyenv
-    export PYENV_ROOT=${PWD}/.pyenv
-    export PATH=$PYENV_ROOT/bin:$PATH
     eval "$(pyenv init -)"
     pyenv install 3.6.8
     pyenv install 3.7.6
