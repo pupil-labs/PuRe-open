@@ -90,6 +90,17 @@ job_templates:
         - chmod +x .travis/build_wheels_manylinux.sh
         - docker run --rm -e PY_MM=$PY_MM -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/build_wheels_manylinux.sh
 
+  
+  - job: &mac_base_job
+      stage: build
+      os: osx
+      osx_image: xcode9.2 # latest xcode for 10.12
+      language: shell
+      workspaces:
+        use: dependencies-mac
+      install:
+        - pyenv install --list
+
   - job: &win_base_job
       stage: build
       os: windows
@@ -116,15 +127,18 @@ jobs:
     - name: "OpenCV for MacOS 10.12"
       <<: *mac_setup_job
 
+    - name: "MacOS 10.12"
+      <<: *mac_base_job
+
     # - name: "OpenCV for Manylinux"
     #   <<: *ubuntu_setup_job
-    # - name: "Python 3.6.8 on Manylinux"
+    # - name: "Python 3.6 on Manylinux"
     #   <<: *manylinux_base_job
     #   <<: *env_py36
-    # - name: "Python 3.7.6 on Manylinux"
+    # - name: "Python 3.7 on Manylinux"
     #   <<: *manylinux_base_job
     #   <<: *env_py37
-    # - name: "Python 3.8.1 on Manylinux"
+    # - name: "Python 3.8 on Manylinux"
     #   <<: *manylinux_base_job
     #   <<: *env_py38
     # - name: "OpenCV for Windows"
@@ -139,14 +153,14 @@ jobs:
     #   <<: *win_base_job
     #   <<: *env_py38
 
-deploy:
-  provider: releases
-  on:
-    all_branches: true
-    tags: false
-  name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
-  skip_cleanup: true
-  draft: true
-  api_key: $GitHubOAUTH
-  file_glob: true
-  file: ./dist/*
+# deploy:
+#   provider: releases
+#   on:
+#     all_branches: true
+#     tags: false
+#   name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+#   skip_cleanup: true
+#   draft: true
+#   api_key: $GitHubOAUTH
+#   file_glob: true
+#   file: ./dist/*
