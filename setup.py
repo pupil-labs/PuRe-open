@@ -42,13 +42,13 @@ elif platform.system() == "Darwin":
 
 
 external_package_data = []
-opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
-if opencv_lib_path:
-    lib_dir = Path(opencv_lib_path)
-    if lib_dir.exists():
-        for entry in lib_dir.iterdir():
-            if entry.is_file() and entry.suffix in (".dll", ".so", ".dylib"):
-                external_package_data.append(entry)
+# opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
+# if opencv_lib_path:
+#     lib_dir = Path(opencv_lib_path)
+#     if lib_dir.exists():
+#         for entry in lib_dir.iterdir():
+#             if entry.is_file() and entry.suffix in (".dll", ".so", ".dylib"):
+#                 external_package_data.append(entry)
 
 
 @contextmanager

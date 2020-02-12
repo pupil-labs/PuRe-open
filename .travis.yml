@@ -111,8 +111,10 @@ job_templates:
         - pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
-        - export PURE_WHEEL_OPENCV_LIB_PATH=${OpenCV_DIR}/lib
-        - pip wheel . -w dist --no-deps
+        - pip wheel . -w raw_wheels --no-deps
+        - pip install delocate
+        - export DYLD_LIBRARY_PATH=${OpenCV_DIR}/lib:$DYLD_LIBRARY_PATH
+        - delocate-wheel -w dist -v raw_wheels/*
       # script:
       #   - pip install dist/*.whl
       #   - python -c "from pure_detector import PuReDetector"
