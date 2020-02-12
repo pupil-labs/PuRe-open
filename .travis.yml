@@ -115,7 +115,7 @@ job_templates:
         - pip install delocate
         - mkdir -p libs
         - cp ${OpenCV_DIR}/lib/*.dylib libs
-        - export DYLD_LIBRARY_PATH=${PWD}/libs
+        - export DYLD_LIBRARY_PATH=${PWD}/libs:$DYLD_LIBRARY_PATH
         - delocate-wheel -w dist -v raw_wheels/*.whl
       # script:
       #   - pip install dist/*.whl
