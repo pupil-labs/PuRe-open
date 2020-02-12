@@ -1,3 +1,4 @@
+import os
 import platform
 import shutil
 import subprocess
@@ -34,11 +35,12 @@ elif platform.system() == "Linux":
 
 
 external_package_data = []
-if platform.system() == "Windows":
-    opencv_dir = root / "dependencies" / "opencv"
-    if opencv_dir.exists():
-        for entry in (opencv_dir / "x64" / "vc15" / "bin").iterdir():
-            if entry.is_file() and entry.suffix == ".dll":
+opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
+if opencv_lib_path:
+    lib_dir = Path(opencv_lib_path)
+    if lib_dir.exists():
+        for entry in lib_dir.iterdir():
+            if entry.is_file() and entry.suffix in (".dll", ".so", ".dylib"):
                 external_package_data.append(entry)
 
 

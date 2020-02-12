@@ -66,10 +66,7 @@ else
     git clone https://github.com/pyenv/pyenv.git .pyenv
     export PYENV_ROOT=${PWD}/.pyenv
     export PATH=$PYENV_ROOT/bin:$PATH
-    pyenv --version
     eval "$(pyenv init -)"
-    pyenv --version
-    pyenv install --list
     pyenv install 3.6.8
     pyenv install 3.7.6
     pyenv install 3.8.1

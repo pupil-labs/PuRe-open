@@ -107,12 +107,14 @@ job_templates:
           - dependencies-mac
           - pyenv-mac
       install:
-        - export PATH=.pyenv/bin:$PATH
+        - export PYENV_ROOT=${PWD}/.pyenv
+        - export PATH=$PYENV_ROOT/bin:$PATH
         - pyenv global $PYTHON_VERSION
         - python --version
         - pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
+        - export PURE_WHEEL_OPENCV_LIB_PATH=${OpenCV_DIR}/lib
         - pip wheel . -w dist --no-deps
       script:
         - pip install dist/*.whl
@@ -130,6 +132,7 @@ job_templates:
         - python -m pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
+        - export PURE_WHEEL_OPENCV_LIB_PATH=${OpenCV_DIR}/x64/vc15/bin
         - pip wheel . -w dist --no-deps
       script:
         - pip install dist/*.whl
@@ -161,7 +164,7 @@ jobs:
       <<: *manylinux_base_job
       <<: *env_py38
 
-    - name: "OpenCV and Python for Windows"
+    - name: "OpenCV for Windows"
       <<: *win_setup_job
     - name: "Python 3.6.8 on Windows"
       <<: *win_base_job
