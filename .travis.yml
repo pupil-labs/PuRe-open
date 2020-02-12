@@ -64,17 +64,17 @@ job_templates:
 
   - job: &deployable
       deploy:
-      provider: releases
-      on:
-        all_branches: true
-        tags: false
-        condition: 
-      name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
-      skip_cleanup: true
-      draft: true
-      api_key: $GitHubOAUTH
-      file_glob: true
-      file: ./dist/*
+        provider: releases
+        on:
+          all_branches: true
+          tags: false
+          condition: 
+        name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
+        skip_cleanup: true
+        draft: true
+        api_key: $GitHubOAUTH
+        file_glob: true
+        file: ./dist/*
 
   - job: &manylinux_base_job
       stage: build
