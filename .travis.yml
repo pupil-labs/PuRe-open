@@ -99,9 +99,7 @@ job_templates:
       workspaces:
         use: dependencies-mac
       install:
-        - pyenv install --list
-        - cd $(pyenv root) && git describe
-        - cd $(pyenv root) && git pull
+        - brew upgrade pyenv
         - pyenv install --list
 
   - job: &win_base_job
