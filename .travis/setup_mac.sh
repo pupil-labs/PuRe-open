@@ -3,6 +3,14 @@ set -e
 
 # Opencv
 echo "Checking OpenCV cache..."
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac opencv\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+then
+    echo "CLEARING OPENCV CACHE..."
+    echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
+    rm -rf dependencies/opencv
+fi
 if [[ -d dependencies/opencv ]]
 then
     echo "Found OpenCV cache. Build configuration:"
@@ -41,6 +49,14 @@ fi
 
 # Python
 echo "Checking pyenv cache..."
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac pyenv\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache mac\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+then
+    echo "CLEARING PYENV CACHE..."
+    echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
+    rm -rf .pyenv
+fi
 if [[ -d .pyenv/bin ]]
 then
     echo "Found pyenv cache. Installed versions:"

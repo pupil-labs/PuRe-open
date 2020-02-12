@@ -4,6 +4,14 @@ set -e
 echo $TRAVIS_COMMIT_MESSAGE
 
 # Opencv
+if [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache win opencv\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache win\]" ]] || \
+    [[ $TRAVIS_COMMIT_MESSAGE =~ "\[travis: clear-cache\]" ]]
+then
+    echo "CLEARING OPENCV CACHE..."
+    echo "Triggered by commit msg: $TRAVIS_COMMIT_MESSAGE"
+    rm -rf dependencies/opencv
+fi
 echo "Checking OpenCV cache..."
 if [[ -d dependencies/opencv ]]
 then
@@ -44,28 +52,4 @@ else
     rm -rf opencv.zip
     rm -rf opencv-4.2.0
     cd ..
-fi
-
-# Python
-echo "Checking Python cache..."
-if [[ -d /c/Python36/bin ]]
-then
-    echo "Python36 installed with version: $(/c/Python36/bin/python --version)"
-else
-    echo "Installing Python36..."
-    choco install python --version 3.6.8
-fi
-if [[ -d /c/Python37/bin ]]
-then
-    echo "Python37 installed with version: $(/c/Python37/bin/python --version)"
-else
-    echo "Installing Python37..."
-    choco install python --version 3.7.6
-fi
-if [[ -d /c/Python38/bin ]]
-then
-    echo "Python38 installed with version: $(/c/Python38/bin/python --version)"
-else
-    echo "Installing Python38..."
-    choco install python --version 3.8.1
 fi
