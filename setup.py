@@ -44,7 +44,7 @@ elif platform.system() == "Darwin":
 external_package_data = []
 opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
 if opencv_lib_path:
-    cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-rpath={opencv_lib_path}')
+    cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-rpath={opencv_lib_path}"')
     lib_dir = Path(opencv_lib_path)
     if lib_dir.exists():
         for entry in lib_dir.iterdir():
