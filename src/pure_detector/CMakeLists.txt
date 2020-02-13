@@ -19,7 +19,6 @@ add_library(pure_detector MODULE ${pure_detector})
 python_extension_module(pure_detector)
 
 # linker settings
-set(CMAKE_MACOSX_RPATH FALSE)
 target_link_libraries(pure_detector pure_cpp_static)
 target_link_libraries(pure_detector ${OpenCV_LIBS})
 include_directories(${NumPy_INCLUDE_DIRS})

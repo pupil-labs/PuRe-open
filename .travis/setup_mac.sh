@@ -40,7 +40,8 @@ else
         -DWITH_CSTRIPES=ON\
         -DWITH_OPENCL=ON\
         -DWITH_TBB=OFF\
-        -DWITH_CUDA=OFF
+        -DWITH_CUDA=OFF\
+        -DCMAKE_SKIP_RPATH=ON
     make -j2 && make install
     cd ../..
     rm -rf opencv.zip
