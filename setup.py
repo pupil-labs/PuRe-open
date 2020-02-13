@@ -38,17 +38,24 @@ elif platform.system() == "Darwin":
     # not support -std=c++17, but we are using LLVM 4.0 on travis, so we need to use
     # c++1z. See https://clang.llvm.org/cxx_status.html
     cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
+    # This is for building wheels with opencv included. OpenCV dylibs have their
+    # install_name set to @rpath/xxx.dylib and we need to tell the linker for the python
+    # module where to find the libs.
+    opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
+    if opencv_lib_path:
+        cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_lib_path}"')
 
 
 external_package_data = []
-opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
-if opencv_lib_path:
-    cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_lib_path}"')
-    lib_dir = Path(opencv_lib_path)
-    if lib_dir.exists():
-        for entry in lib_dir.iterdir():
-            if entry.is_file() and entry.suffix in (".dll", ".so", ".dylib"):
-                external_package_data.append(entry)
+if platform.system() == "Windows":
+    # Need to manually copy over the opencv DLL for building wheels.
+    opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
+    if opencv_lib_path:
+        lib_dir = Path(opencv_lib_path)
+        if lib_dir.exists():
+            for entry in lib_dir.iterdir():
+                if entry.is_file() and entry.suffix in (".dll"):
+                    external_package_data.append(entry)
 
 
 @contextmanager
