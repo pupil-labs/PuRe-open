@@ -122,6 +122,7 @@ job_templates:
         - env | grep LD_LIBRARY_PATH
         - echo $DYLD_LIBRARY_PATH
         - env | grep DYLD_LIBRARY_PATH
+        - python -c "import os; from pprint import pprint; pprint(dict(**os.environ))"   
         - delocate-wheel -w dist -v raw_wheels/*.whl
       script:
         - pip install dist/*.whl
