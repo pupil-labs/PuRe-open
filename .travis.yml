@@ -116,13 +116,7 @@ job_templates:
         # copy libs over, resolving symlinks!
         - mkdir -p libs
         - cp -L ${OpenCV_DIR}/lib/*.dylib libs
-        - export LD_LIBRARY_PATH=${PWD}/libs:$LD_LIBRARY_PATH
-        - export DYLD_LIBRARY_PATH=${PWD}/libs:$DYLD_LIBRARY_PATH
-        - echo $LD_LIBRARY_PATH
-        - env | grep LD_LIBRARY_PATH
-        - echo $DYLD_LIBRARY_PATH
-        - env | grep DYLD_LIBRARY_PATH
-        - python -c "import os; from pprint import pprint; pprint(dict(**os.environ))"   
+        - find libs
         - delocate-wheel -w dist -v raw_wheels/*.whl
       script:
         - pip install dist/*.whl
