@@ -118,9 +118,9 @@ job_templates:
         - cp -L ${OpenCV_DIR}/lib/*.dylib libs
         - export DYLD_FALLBACK_LIBRARY_PATH=${PWD}/libs:$DYLD_FALLBACK_LIBRARY_PATH
         - delocate-wheel -w dist -v raw_wheels/*.whl
-      # script:
-      #   - pip install dist/*.whl
-      #   - python -c "from pure_detector import PuReDetector"
+      script:
+        - pip install dist/*.whl
+        - python -c "from pure_detector import PuReDetector"
 
   - job: &win_base_job
       stage: build

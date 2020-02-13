@@ -38,7 +38,7 @@ elif platform.system() == "Darwin":
     # not support -std=c++17, but we are using LLVM 4.0 on travis, so we need to use
     # c++1z. See https://clang.llvm.org/cxx_status.html
     cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
-
+    cmake_args.append("-DCMAKE_MACOSX_RPATH=0")
 
 
 external_package_data = []
