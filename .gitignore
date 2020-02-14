@@ -1,7 +1,12 @@
 build
+_skbuild
+dist
+src/pure_detector/_meta.py
+MANIFEST
+
 .venv
 .vscode
 .ipynb_checkpoints
+
 dependencies
-dist
-_skbuild
+
