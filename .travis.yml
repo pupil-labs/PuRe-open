@@ -111,7 +111,6 @@ job_templates:
         - pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
-        - export PURE_WHEEL_OPENCV_LIB_PATH=${OpenCV_DIR}/lib
         - pip wheel . -w raw_wheels --no-deps
         - pip install delocate
         - delocate-wheel -w dist -v raw_wheels/*.whl
@@ -130,7 +129,6 @@ job_templates:
         - python -m pip install -U pip
       before_script:
         - export OpenCV_DIR=${PWD}/dependencies/opencv
-        - export PURE_WHEEL_OPENCV_LIB_PATH=${OpenCV_DIR}/x64/vc15/bin
         - pip wheel . -w dist --no-deps
       script:
         - pip install dist/*.whl
