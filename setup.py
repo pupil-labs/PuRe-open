@@ -30,14 +30,14 @@ if platform.system() == "Windows":
     # The Ninja cmake generator will use mingw (gcc) on windows travis instances, but we
     # need to use msvc for compatibility.
     cmake_args.append("-GVisual Studio 15 2017 Win64")
-# elif platform.system() == "Linux":
+elif platform.system() == "Linux":
     # This is required for the build on manylinux.
-    # cmake_args.append('-DCMAKE_CXX_FLAGS="-fPIC"')
+    cmake_args.append('-DCMAKE_CXX_FLAGS="-fPIC"')
 elif platform.system() == "Darwin":
     # Assuming we are using clang, we need to enable cpp17 specifically. LLVM < 5 does
     # not support -std=c++17, but we are using LLVM 4.0 on travis, so we need to use
     # c++1z. See https://clang.llvm.org/cxx_status.html
-    cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
+    # cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
     # This is for building wheels with opencv included. OpenCV dylibs have their
     # install_name set to @rpath/xxx.dylib and we need to tell the linker for the python
     # module where to find the libs.

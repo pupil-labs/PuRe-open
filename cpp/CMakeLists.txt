@@ -3,8 +3,14 @@ cmake_minimum_required (VERSION 3.8)
 project(pure_cpp)
 
 # C++17 required
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+if (APPLE)
+	# We target 10.12 on travis with LLVM 4.0, which does not offer c++17 yet, so we
+	# need to use c++1z.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
+else ()
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+endif()
 
 # Find OpenCV. Needs to be on cmake search path, or specify OpenCV_DIR variable.
 find_package(OpenCV REQUIRED)
