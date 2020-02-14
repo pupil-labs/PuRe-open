@@ -33,17 +33,13 @@ if platform.system() == "Windows":
 elif platform.system() == "Linux":
     # This is required for the build on manylinux.
     cmake_args.append('-DCMAKE_CXX_FLAGS="-fPIC"')
-elif platform.system() == "Darwin":
-    # Assuming we are using clang, we need to enable cpp17 specifically. LLVM < 5 does
-    # not support -std=c++17, but we are using LLVM 4.0 on travis, so we need to use
-    # c++1z. See https://clang.llvm.org/cxx_status.html
-    # cmake_args.append('-DCMAKE_CXX_FLAGS="-std=c++1z"')
+# elif platform.system() == "Darwin":
     # This is for building wheels with opencv included. OpenCV dylibs have their
     # install_name set to @rpath/xxx.dylib and we need to tell the linker for the python
     # module where to find the libs.
-    opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
-    if opencv_lib_path:
-        cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_lib_path}"')
+    # opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
+    # if opencv_lib_path:
+    #     cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_lib_path}"')
 
 
 external_package_data = []
