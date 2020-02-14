@@ -143,17 +143,17 @@ job_templates:
 
 jobs:
   include:
-    - name: "OpenCV and Python for MacOS 10.12"
-      <<: *mac_setup_job
-    - name: "Python 3.6 on MacOS 10.12"
-      <<: *mac_base_job
-      <<: *env_py36
-    - name: "Python 3.7 on MacOS 10.12"
-      <<: *mac_base_job
-      <<: *env_py37
-    - name: "Python 3.8 on MacOS 10.12"
-      <<: *mac_base_job
-      <<: *env_py38
+    # - name: "OpenCV and Python for MacOS 10.12"
+    #   <<: *mac_setup_job
+    # - name: "Python 3.6 on MacOS 10.12"
+    #   <<: *mac_base_job
+    #   <<: *env_py36
+    # - name: "Python 3.7 on MacOS 10.12"
+    #   <<: *mac_base_job
+    #   <<: *env_py37
+    # - name: "Python 3.8 on MacOS 10.12"
+    #   <<: *mac_base_job
+    #   <<: *env_py38
 
     - name: "OpenCV for Manylinux"
       <<: *ubuntu_setup_job
@@ -167,17 +167,17 @@ jobs:
       <<: *manylinux_base_job
       <<: *env_py38
 
-    - name: "OpenCV for Windows"
-      <<: *win_setup_job
-    - name: "Python 3.6 on Windows"
-      <<: *win_base_job
-      <<: *env_py36
-    - name: "Python 3.7 on Windows"
-      <<: *win_base_job
-      <<: *env_py37
-    - name: "Python 3.8 on Windows"
-      <<: *win_base_job
-      <<: *env_py38
+    # - name: "OpenCV for Windows"
+    #   <<: *win_setup_job
+    # - name: "Python 3.6 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py36
+    # - name: "Python 3.7 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py37
+    # - name: "Python 3.8 on Windows"
+    #   <<: *win_base_job
+    #   <<: *env_py38
 
 deploy:
   provider: releases
