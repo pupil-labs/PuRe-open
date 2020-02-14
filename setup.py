@@ -37,17 +37,17 @@ elif platform.system() == "Linux":
     # This is for building wheels with opencv included. OpenCV dylibs have their
     # install_name set to @rpath/xxx.dylib and we need to tell the linker for the python
     # module where to find the libs.
-    # opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
-    # if opencv_lib_path:
-    #     cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_lib_path}"')
+    opencv_dir = os.environ.get("OpenCV_DIR", None)
+    if opencv_dir:
+        cmake_args.append(f'-DCMAKE_MODULE_LINKER_FLAGS="-Wl,-rpath,{opencv_dir}/lib"')
 
 
 external_package_data = []
 if platform.system() == "Windows":
-    # Need to manually copy over the opencv DLL for building wheels.
-    opencv_lib_path = os.environ.get("PURE_WHEEL_OPENCV_LIB_PATH", None)
-    if opencv_lib_path:
-        lib_dir = Path(opencv_lib_path)
+    # Need to manually copy over the opencv DLLs for building wheels.
+    opencv_dir = os.environ.get("OpenCV_DIR", None)
+    if opencv_dir:
+        lib_dir = Path(opencv_dir) / "x64" / "vc15" / "bin"
         if lib_dir.exists():
             for entry in lib_dir.iterdir():
                 if entry.is_file() and entry.suffix in (".dll"):
