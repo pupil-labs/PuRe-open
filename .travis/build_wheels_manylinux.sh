@@ -22,4 +22,9 @@ for whl in /io/dist/*.whl; do
     pip install "$whl"
 done
 
+# test
 python -c "from pure_detector import PuReDetector"
+
+# create sdist for deployment
+pip install pep517
+python -m pep517.build --source --out-dir /io/dist /io

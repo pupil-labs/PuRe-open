@@ -118,6 +118,9 @@ job_templates:
       script:
         - pip install dist/*.whl
         - python -c "from pure_detector import PuReDetector"
+      before_deploy:
+        - pip install pep517
+        - python -m pep517.build --source .
 
   - job: &win_base_job
       stage: build
@@ -134,6 +137,9 @@ job_templates:
       script:
         - pip install dist/*.whl
         - python -c "from pure_detector import PuReDetector"
+      before_deploy:
+        - pip install pep517
+        - python -m pep517.build --source .
 
 ################################################################################
 # DEFINE JOB MATRIX
