@@ -13,6 +13,6 @@ prune examples
 
 ## possible build artifacts
 exclude src/pure_detector/_meta.py
-exclude *.dll *.so *.dylib
+global-exclude *.dll *.so *.dylib
 prune _skbuild
 prune dist
