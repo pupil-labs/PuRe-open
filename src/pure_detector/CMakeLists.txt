@@ -9,15 +9,6 @@ find_package(Cython REQUIRED)
 find_package(NumPy REQUIRED)
 find_package(OpenCV REQUIRED)
 
-if (APPLE)
-
-elseif (UNIX)
-    # required for building on manylinyx images
-    set (CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-elseif (WIN32)
-
-endif()
-
 # Note: add_cython_target does not actually add a target, but fills a variable with the
 # corresponding compiled source file, e.g. here 'pure_detector.cxx'. If only the name is
 # specified, it will look for a cython file with the same base name: 'pure_detecot.pyx'.
