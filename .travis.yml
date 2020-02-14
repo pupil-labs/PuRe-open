@@ -2,8 +2,8 @@
 # ENVIRONMENT TEMPLATES
 ################################################################################
 
-# can't merge arrays in YAML so we have to duplicate stuff between 36 and 37
-# and include all variables that are relevant across all operating systems
+# can't merge arrays in YAML so we have to duplicate stuff between versions and
+# include all variables that are relevant across all operating systems
 py_env_settings:
   - setting: &env_py36
       env:
@@ -27,6 +27,8 @@ py_env_settings:
 ################################################################################
 # OS JOB TEMPLATES
 ################################################################################
+
+# these templates are mixed together to define the job matrix below
 
 stages:
   - setup
@@ -93,7 +95,6 @@ job_templates:
         - chmod +x .travis/build_wheels_manylinux.sh
         - docker run --rm -e PY_MM=$PY_MM -v `pwd`:/io quay.io/pypa/manylinux2014_x86_64 /io/.travis/build_wheels_manylinux.sh
 
-  
   - job: &mac_base_job
       stage: build
       os: osx
@@ -132,7 +133,6 @@ job_templates:
         - pip wheel . -w dist --no-deps
       script:
         - pip install dist/*.whl
-        - export PATH=${OpenCV_DIR}/x64/vc15/bin:$PATH
         - python -c "from pure_detector import PuReDetector"
 
 ################################################################################
@@ -176,6 +176,10 @@ jobs:
     - name: "Python 3.8 on Windows"
       <<: *win_base_job
       <<: *env_py38
+
+################################################################################
+# DEPLOYMENT
+################################################################################
 
 deploy:
   provider: releases
