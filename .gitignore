@@ -3,6 +3,7 @@ _skbuild
 dist
 src/pure_detector/_meta.py
 MANIFEST
+*.egg-info
 
 .venv
 .vscode
