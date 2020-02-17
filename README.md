@@ -2,6 +2,36 @@
 
 Open source implementation of the pupil detection algorithm described in the paper ["PuRe: Robust pupil detection for real-time pervasive eye tracking"](https://www.sciencedirect.com/science/article/pii/S1077314218300146).
 
+## Usage
+
+Here is some quickstart code to get you started. Have a look at the [Python example](./examples/python/main.py) for a working example.
+
+```python
+from pupil_pure import PuReDetector
+
+detector = PuReDetector()
+
+img = ... # read some eye image here
+
+result = detector.detect(img)
+print(result)
+```
+
+The output will be a dictionary in the following form:
+```json
+{
+    'confidence': 0.9491466283798218,
+    'diameter': 92.72294616699219,
+    'ellipse': {
+        'angle': 137.4583740234375,
+        'axes': (78.5771255493164, 92.72294616699219),
+        'center': (347.7300720214844, 259.9238586425781)
+    },
+    'location': (347.7300720214844, 259.9238586425781)
+}
+```
+
+
 ## Building from source
 
 ### Setup OpenCV Dependency
