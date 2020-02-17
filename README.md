@@ -5,19 +5,26 @@ Open source implementation of the pupil detection algorithm described in the pap
 ## Building from source
 
 ### Setup OpenCV Dependency
-When building from source, you have to make sure that OpenCV can be found.
+This project depends on [OpenCV 4+](https://opencv.org/).
+When building from source, you have to make sure that OpenCV can be found. 
 
 #### Ubuntu
 You can install OpenCV via the terminal with:
 
 ```bash
-apt get install libopencv-dev
+sudo apt install libopencv-dev
+```
+
+#### MacOS
+You can install OpenCV with [brew](https://brew.sh/):
+```bash
+brew install opencv
 ```
 
 #### Windows
-- Download latest OpenCV 3.x release for Windows from https://opencv.org/releases/
-- Run the downloaded `opencv-*.exe`. Extract to a place where you want to install OpenCV. This should NOT be a temporary location! Choose e.g. `C:/OpenCV`.
-- Create a new environment variable `OpenCV_DIR` that points to the `build` folder of the just installed OpenCV, e.g. to `C:/OpenCV/build`.
+- Download latest OpenCV 4.x release for Windows from https://opencv.org/releases/
+- Run the downloaded `opencv-*.exe`. Extract to a place where you want to install OpenCV. This should NOT be a temporary location! Choose e.g. `C:/opencv`.
+- Create a new environment variable `OpenCV_DIR` that points to the `build` folder of the just installed OpenCV, e.g. to `C:/opencv/build`.
 - Add the following location to your PATH environment variable: `%OpenCV_DIR%/x64/vc15/bin`.
 
 #### Custom OpenCV Built from Source
