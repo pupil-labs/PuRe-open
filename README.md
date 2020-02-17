@@ -14,20 +14,19 @@ detector = PuReDetector()
 img = ... # read some eye image here
 
 result = detector.detect(img)
-print(result)
 ```
 
-The output will be a dictionary in the following form:
-```json
+The result will be a dictionary in the following form:
+```python
 {
-    'confidence': 0.9491466283798218,
-    'diameter': 92.72294616699219,
-    'ellipse': {
+    'confidence': 0.9491466283798218,                       # detection confidence
+    'diameter': 92.72294616699219,                          # pupil diameter
+    'location': (347.7300720214844, 259.9238586425781)      # pupil location (center)
+    'ellipse': {                                            # ellipse parameters
         'angle': 137.4583740234375,
         'axes': (78.5771255493164, 92.72294616699219),
         'center': (347.7300720214844, 259.9238586425781)
     },
-    'location': (347.7300720214844, 259.9238586425781)
 }
 ```
 
@@ -73,3 +72,14 @@ All code for the detector is located in [cpp](./cpp) and includes a `CMakeLists.
 
 ### Python Wrapper
 The python library works by wrapping a Cython interface around the C++ code. The Cython wrapper can be found in [src/pupil_pure](./src/pupil_pure). Both C++ and Cython are compiled via CMake with the help of the [scikit-build build system](https://scikit-build.readthedocs.io/en/latest/). After installing with `pip` you can run the examples in [examples/python](./examples/python).
+
+### Wheel Building Notes
+Building wheels works on travis via macOS, Windows and Linux VMs. OpenCV is built on travis and included in the wheel as dynamic library.
+
+In order to speed up builds, the built OpenCV is stored in travis caches. Caches can be cleared by including the following line in the commit message:
+`[travis: clear-cache]` or more specifically e.g. `[travis: clear-cache win]`. The caches are checked, loaded and rebuilt in a setup stage and made available via travis workspaces.
+
+Including the shared library in the wheel works differently depending on the platform:
+- For Windows, the DLLs are added to the `package_data` in `setup.py`. Since they live in the same folder as the python extension module, they will be loaded without problems.
+- For Linux the wheels are built on the officially recommended [manylinux](https://github.com/pypa/manylinux) image. The shared library is afterwards patched into the wheel with [auditwheel](https://github.com/pypa/auditwheel) as also recommended on the manylinux docs.
+- For macOS we use [delocate](https://github.com/matthew-brett/delocate) to patch the libraries into the wheel and adjust the `install_name` accordingly.
