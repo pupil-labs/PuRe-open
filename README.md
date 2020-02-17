@@ -34,7 +34,7 @@ The result will be a dictionary in the following form:
 ## Building from source
 
 ### Setup OpenCV Dependency
-This project depends on [OpenCV 4+](https://opencv.org/).
+This project depends on [OpenCV](https://opencv.org/). We currently support OpenCV3 and OpenCV4.
 When building from source, you have to make sure that OpenCV can be found. 
 
 #### Ubuntu
@@ -51,7 +51,7 @@ brew install opencv
 ```
 
 #### Windows
-- Download latest OpenCV 4.x release for Windows from https://opencv.org/releases/
+- Download latest OpenCV release for Windows from https://opencv.org/releases/
 - Run the downloaded `opencv-*.exe`. Extract to a place where you want to install OpenCV. This should NOT be a temporary location! Choose e.g. `C:/opencv`.
 - Create a new environment variable `OpenCV_DIR` that points to the `build` folder of the just installed OpenCV, e.g. to `C:/opencv/build`.
 - Add the following location to your PATH environment variable: `%OpenCV_DIR%/x64/vc15/bin`.
