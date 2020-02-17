@@ -1,0 +1,18 @@
+# INCLUDE
+recursive-include cpp *
+recursive-include src *
+include CMakeLists.txt LICENSE MANIFEST.in pyproject.toml README.md setup.py
+
+# EXCLUDE
+## CI related
+exclude .travis.yml
+prune .travis
+
+## examples
+prune examples
+
+## possible build artifacts
+exclude src/pure_detector/_meta.py
+global-exclude *.dll *.so *.dylib
+prune _skbuild
+prune dist
