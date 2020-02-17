@@ -190,11 +190,10 @@ jobs:
 deploy:
   provider: releases
   on:
-    all_branches: true
-    tags: false
+    branch: master
+    tags: true
   name: "Travis: ${TRAVIS_JOB_NAME} on ${TRAVIS_COMMIT:0:7}"
   skip_cleanup: true
-  draft: true
   api_key: $GitHubOAUTH
   file_glob: true
   file: ./dist/*
