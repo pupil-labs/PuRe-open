@@ -8,7 +8,7 @@ from pathlib import Path
 from skbuild import setup
 
 package_dir = "src"
-package = "pure_detector"
+package = "pupil_pure"
 
 install_requires = ["numpy"]
 
@@ -80,7 +80,7 @@ with collect_package_data(external_package_data) as package_data:
         cmake_args=cmake_args,
         install_requires=install_requires,
         license="GNU",
-        name="pure_detector",
+        name="pupil_pure",
         packages=[package],
         package_data={package: package_data},
         package_dir={"": package_dir},

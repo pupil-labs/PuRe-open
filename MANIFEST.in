@@ -12,7 +12,7 @@ prune .travis
 prune examples
 
 ## possible build artifacts
-exclude src/pure_detector/_meta.py
+exclude src/pupil_pure/_meta.py
 global-exclude *.dll *.so *.dylib
 prune _skbuild
 prune dist

@@ -1,5 +1,5 @@
 import cv2
-from pure_detector import PuReDetector
+from pupil_pure import PuReDetector
 
 # read image as color and grayscale
 img = cv2.imread("../eye.png", cv2.IMREAD_COLOR)

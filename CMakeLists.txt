@@ -12,4 +12,4 @@ endif ()
 add_subdirectory("cpp")
 
 # include cython wrapping
-add_subdirectory("src/pure_detector")
+add_subdirectory("src/pupil_pure")

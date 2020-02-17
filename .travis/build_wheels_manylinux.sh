@@ -23,7 +23,7 @@ for whl in /io/dist/*.whl; do
 done
 
 # test
-python -c "from pure_detector import PuReDetector"
+python -c "from pupil_pure import PuReDetector"
 
 # create sdist for deployment
 pip install pep517

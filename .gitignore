@@ -1,7 +1,7 @@
 build
 _skbuild
 dist
-src/pure_detector/_meta.py
+src/pupil_pure/_meta.py
 MANIFEST
 *.egg-info
 
