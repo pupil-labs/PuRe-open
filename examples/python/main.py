@@ -10,7 +10,7 @@ d = PuReDetector()
 result, debug = d.detect_debug(gray)
 
 # draw result on color image
-# cv excepts tuples of ints and semi-axes
+# cv expects tuples of ints and semi-axes
 ellipse = result["ellipse"]
 cv2.ellipse(
     img,
