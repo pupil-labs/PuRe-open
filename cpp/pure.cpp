@@ -910,6 +910,7 @@ namespace pure {
 
         // compute value
         conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
+        if (conf.outline_contrast < 0.5) conf.value = 0;
 
         return conf;
     }
