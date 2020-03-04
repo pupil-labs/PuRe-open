@@ -965,6 +965,8 @@ namespace pure {
         const double sin_angle = sin(result.angle * radian_per_degree);
         const Rect bounds = Rect(0, 0, orig_img.cols, orig_img.rows);
         constexpr int bias = 5;
+        // Mat tmp;
+        // cvtColor(orig_img, tmp, COLOR_GRAY2BGR);
         for (int i = 0; i < n_iterations; ++i)
         {
             const double x = result.axes.width * cos(theta);
@@ -976,8 +978,8 @@ namespace pure {
             Point2f outline_point = result.center + offset;
 
             Point2f offset_norm = offset / cv::norm(offset);
-            Point2f inner_pt = outline_point - (0.15 * minor) * offset_norm;
-            Point2f outer_pt = outline_point + (0.15 * minor) * offset_norm;
+            Point2f inner_pt = outline_point - (0.3 * minor) * offset_norm;
+            Point2f outer_pt = outline_point + (0.3 * minor) * offset_norm;
 
             if (!bounds.contains(inner_pt) || !bounds.contains(outer_pt)) 
             {
@@ -1003,8 +1005,16 @@ namespace pure {
 
             if (inner_avg + bias < outer_avg) contrast += 1;
 
+            // if (inner_avg + bias < outer_avg)
+            //     line(tmp, inner_pt, outer_pt, Scalar(0, 255, 0));
+            // else
+            //     line(tmp, inner_pt, outer_pt, Scalar(0, 0, 255));
+
             theta += stride;
         }
+
+        // imshow("pfa", tmp);
+        // waitKey(-1);
         return contrast / n_iterations;
     }
 
