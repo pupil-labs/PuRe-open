@@ -909,8 +909,8 @@ namespace pure {
         conf.outline_contrast = ellipse_outline_constrast(result);
 
         // compute value
-        conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
-        if (conf.outline_contrast < 0.5) conf.value = 0;
+        // conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
+        conf.value = (conf.angular_spread + conf.outline_contrast) / 2.0;
 
         return conf;
     }
