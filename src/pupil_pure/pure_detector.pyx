@@ -141,6 +141,6 @@ cdef class PuReDetector:
         }
         result["diameter"] = max(result["ellipse"]["axes"])
         result["location"] = result["ellipse"]["center"]
-        result["confidence"] = c_result.confidence.outline_contrast
+        result["confidence"] = c_result.confidence.aspect_ratio
         
         return result, debug_img
