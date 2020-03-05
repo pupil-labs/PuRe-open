@@ -5,6 +5,7 @@
 #include <queue>
 #include <tuple>
 #include <array>
+#include <bitset>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -909,8 +910,7 @@ namespace pure {
         conf.outline_contrast = ellipse_outline_constrast(result);
 
         // compute value
-        // conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
-        conf.value = (conf.angular_spread + conf.outline_contrast) / 2.0;
+        conf.value = (conf.aspect_ratio + conf.angular_spread + conf.outline_contrast) / 3.0;
 
         return conf;
     }
@@ -921,33 +921,43 @@ namespace pure {
         // -------
         // Q3 | Q4
         // (not in image coordinates, but y-up)
-        bool points_in_q1 = false;
-        bool points_in_q2 = false;
-        bool points_in_q3 = false;
-        bool points_in_q4 = false;
+
+        bitset<8> bins;
 
         for (const auto& p : segment)
         {
-            if (p.x > result.center.x)
+            const auto v = Point2f(p.x - result.center.x, p.y - result.center.y);
+            if (v.x > 0)
             {
-                if (p.y > result.center.y) points_in_q1 = true;
-                else points_in_q4 = true;
+                if (v.y > 0)
+                {
+                    if (v.x > v.y) bins[1] = true;
+                    else bins[0] = true;
+                }
+                else
+                {
+                    if (v.x > v.y) bins[2] = true;
+                    else bins[3] = true;
+                }
             }
             else
             {
-                if (p.y > result.center.y) points_in_q2 = true;
-                else points_in_q3 = true;
+                if (v.y > 0)
+                {
+                    if (v.x > v.y) bins[7] = true;
+                    else bins[6] = true;
+                }
+                else
+                {
+                    if (v.x > v.y) bins[4] = true;
+                    else bins[5] = true;
+                }
             }
             // early exit
-            if (points_in_q1 && points_in_q2 && points_in_q3 && points_in_q4) break;
+            if (bins.count() == 8) break;
         }
-        
-        double spread = 0.0;
-        if (points_in_q1) spread += 0.25;
-        if (points_in_q2) spread += 0.25;
-        if (points_in_q3) spread += 0.25;
-        if (points_in_q4) spread += 0.25;
-        return spread;
+
+        return bins.count() / 8.0;
     }
 
     double Detector::ellipse_outline_constrast(const Result& result) const
